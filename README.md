@@ -86,11 +86,11 @@ modules:
 
 | Agent | Persona | Role |
 |-------|---------|------|
-| `builder` | Bob the Builder | TDD Implementation Specialist - "Can we fix it? Yes we can!" |
-| `inspector` | Vera the Inspector | Independent verification with code citations |
-| `reviewer` | Rex the Reviewer | Adversarial code reviewer - finds problems |
-| `reflection` | Rita the Reflection | Knowledge curator for playbook learning |
-| `test-quality` | Tessa the Tester | Test quality analyst and coverage validator |
+| `builder` | Mason the Craftsman | TDD Implementation Specialist - "Measure twice, cut once" |
+| `inspector` | Vera the Code Detective | Independent verification with code citations |
+| `reviewer` | Rex the Code Critic | Adversarial code reviewer - finds problems |
+| `reflection` | Rita the Wise Librarian | Knowledge curator for playbook learning |
+| `test-quality` | Tessa the Test Scientist | Test quality analyst and coverage validator |
 
 ## Story Pipeline Flow
 
@@ -101,7 +101,7 @@ modules:
 │                                                              │
 │  ┌──────────┐    ┌───────────┐    ┌──────────────┐         │
 │  │ BUILDER  │───▶│ INSPECTOR │───▶│ TEST QUALITY │         │
-│  │  (Bob)   │    │  (Vera)   │    │   (Tessa)    │         │
+│  │  (Mason)   │    │  (Vera)   │    │   (Tessa)    │         │
 │  └──────────┘    └───────────┘    └──────────────┘         │
 │       │                                    │                 │
 │       │         Steps 1-4              Steps 5-6            │
