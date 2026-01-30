@@ -101,13 +101,13 @@ The pipeline spawns multiple specialized reviewers based on story complexity:
 |----------|---------|-------|---------|
 | `security` | Sasha the Security Sentinel | Vulnerabilities, auth, injection | All stories |
 | `logic` | Leo the Logic Hunter | Bugs, edge cases, performance | Standard + Complex |
-| `architect` | Ada the Architecture Guardian | Patterns, integration, routes | All stories |
+| `architect` | Rosie the Architecture Guardian | Patterns, integration, routes | All stories |
 | `quality` | Quinn the Quality Crusader | Code smells, maintainability | Complex only |
 
 **Complexity → Reviewers:**
-- **Micro**: Sasha + Ada (2 reviewers)
-- **Standard**: Sasha + Leo + Ada (3 reviewers)
-- **Complex**: Sasha + Leo + Ada + Quinn (4 reviewers)
+- **Micro**: Sasha + Rosie (2 reviewers)
+- **Standard**: Sasha + Leo + Rosie (3 reviewers)
+- **Complex**: Sasha + Leo + Rosie + Quinn (4 reviewers)
 
 ### Conditional Reviewers
 
@@ -115,18 +115,18 @@ These reviewers are **automatically added** when relevant files are detected:
 
 | Reviewer | Persona | Focus | Triggered By |
 |----------|---------|-------|--------------|
-| `ux_accessibility` | Ava the Accessibility Advocate | WCAG, ARIA, keyboard nav, screen readers | Frontend files (*.tsx, *.jsx, *.css, components/*, pages/*) |
+| `ux_accessibility` | Ada the Accessibility Advocate | WCAG, ARIA, keyboard nav, screen readers | Frontend files (*.tsx, *.jsx, *.css, components/*, pages/*) |
 
 **Smart Detection:**
 ```bash
-# Ava is invoked when git diff includes frontend files:
+# Ada is invoked when git diff includes frontend files:
 git diff --name-only | grep -E "\.(tsx|jsx|vue|css|scss|html)$|components/|pages/"
 ```
 
 **Example Outcomes:**
-- Backend API story (only .ts service files) → **No Ava** (saves tokens)
-- Full-stack story (API + components) → **Ava added** to reviewer squad
-- UI-only story (component changes) → **Ava included** for accessibility review
+- Backend API story (only .ts service files) → **No Ada** (saves tokens)
+- Full-stack story (API + components) → **Ada added** to reviewer squad
+- UI-only story (component changes) → **Ada included** for accessibility review
 
 ## Story Pipeline Flow
 
@@ -146,14 +146,14 @@ git diff --name-only | grep -E "\.(tsx|jsx|vue|css|scss|html)$|components/|pages
 │       │              ┌───────────┐        │                 │
 │       │              │ REVIEWERS │◀───────┘                 │
 │       │              │Sasha/Leo/ │                          │
-│       │              │Ada/Quinn  │                          │
+│       │              │Rosie/Quinn│                          │
 │       │              └───────────┘                          │
 │       │                   │                                  │
 │       │               Step 7                                │
 │       │           Code Review                               │
 │       │                   │                                  │
 │       │              ┌────▼────┐                            │
-│       └─────────────▶│  FIXER  │  (Bob resumes)            │
+│       └─────────────▶│  FIXER  │  (Mason resumes)          │
 │                      │         │                            │
 │                      └────┬────┘                            │
 │                           │                                  │

@@ -70,22 +70,22 @@ agents:
 
     # Base reviewer count by complexity (before conditional reviewers)
     review_agent_count:
-      micro: 2 # Sasha (Security) + Ada (Architect)
-      standard: 3 # Sasha (Security) + Leo (Logic) + Ada (Architect)
-      complex: 4 # Sasha (Security) + Leo (Logic) + Ada (Architect) + Quinn (Quality)
+      micro: 2 # Sasha (Security) + Rosie (Architect)
+      standard: 3 # Sasha (Security) + Leo (Logic) + Rosie (Architect)
+      complex: 4 # Sasha (Security) + Leo (Logic) + Rosie (Architect) + Quinn (Quality)
 
     # Always-included reviewers (based on complexity)
     review_types:
       security: "{agents_path}/security-reviewer.md" # Sasha the Security Sentinel - ALWAYS
       logic: "{agents_path}/logic-reviewer.md" # Leo the Logic Hunter - standard+
-      architect: "{agents_path}/architect-integration-reviewer.md" # Ada the Architecture Guardian - ALWAYS
+      architect: "{agents_path}/architect-integration-reviewer.md" # Rosie the Architecture Guardian - ALWAYS
       quality: "{agents_path}/quality-reviewer.md" # Quinn the Quality Crusader - complex only
 
     # Conditional reviewers (based on file patterns)
     # These are ADDED to the base count when triggered
     conditional_reviewers:
       ux_accessibility:
-        name: "Ava"
+        name: "Ada"
         title: "The Accessibility Advocate"
         prompt_file: "{agents_path}/ux-accessibility-reviewer.md"
         trigger_on_files:
