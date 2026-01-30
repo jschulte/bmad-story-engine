@@ -67,15 +67,60 @@ agents:
     adversarial: true # Goal: find issues
     trust_level: "high" # Wants to find problems
     timeout: 1800 # 30 minutes
+
+    # Base reviewer count by complexity (before conditional reviewers)
     review_agent_count:
       micro: 2 # Sasha (Security) + Ada (Architect)
       standard: 3 # Sasha (Security) + Leo (Logic) + Ada (Architect)
       complex: 4 # Sasha (Security) + Leo (Logic) + Ada (Architect) + Quinn (Quality)
+
+    # Always-included reviewers (based on complexity)
     review_types:
-      security: "{agents_path}/security-reviewer.md" # Sasha the Security Sentinel
-      logic: "{agents_path}/logic-reviewer.md" # Leo the Logic Hunter
-      architect: "{agents_path}/architect-integration-reviewer.md" # Ada the Architecture Guardian
-      quality: "{agents_path}/quality-reviewer.md" # Quinn the Quality Crusader
+      security: "{agents_path}/security-reviewer.md" # Sasha the Security Sentinel - ALWAYS
+      logic: "{agents_path}/logic-reviewer.md" # Leo the Logic Hunter - standard+
+      architect: "{agents_path}/architect-integration-reviewer.md" # Ada the Architecture Guardian - ALWAYS
+      quality: "{agents_path}/quality-reviewer.md" # Quinn the Quality Crusader - complex only
+
+    # Conditional reviewers (based on file patterns)
+    # These are ADDED to the base count when triggered
+    conditional_reviewers:
+      ux_accessibility:
+        name: "Ava"
+        title: "The Accessibility Advocate"
+        prompt_file: "{agents_path}/ux-accessibility-reviewer.md"
+        trigger_on_files:
+          - "*.tsx"
+          - "*.jsx"
+          - "*.vue"
+          - "*.svelte"
+          - "*.css"
+          - "*.scss"
+          - "*.sass"
+          - "*.less"
+          - "*.html"
+          - "components/**"
+          - "pages/**"
+          - "app/**/page.tsx"
+          - "app/**/layout.tsx"
+          - "src/components/**"
+          - "src/pages/**"
+          - "src/views/**"
+          - "public/**/*.html"
+        trigger_on_keywords:
+          - "component"
+          - "UI"
+          - "form"
+          - "button"
+          - "modal"
+          - "dialog"
+          - "accessibility"
+          - "a11y"
+          - "ARIA"
+          - "screen reader"
+          - "keyboard"
+          - "focus"
+        detection_command: |
+          git diff --name-only HEAD~1 | grep -E "\.(tsx|jsx|vue|svelte|css|scss|html)$|components/|pages/|views/"
 
   fixer:
     description: "Issue resolution - Mason resumes to fix critical/high issues"
