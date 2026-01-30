@@ -1,0 +1,50 @@
+# BMad Story Engine Module
+# External module for BMAD-METHOD providing multi-agent story development engine
+
+code: bse
+name: "BMad Story Engine"
+description: "Multi-agent story development engine with gap analysis, batch processing, playbook learning, and quality gates"
+version: "1.0.0"
+author: "Jonah Schulte"
+default_selected: false
+
+# Module dependencies - ensures BMM is installed first
+requires:
+  - bmm
+
+# Configuration prompts shown during installation
+configuration_prompts:
+  - id: enable_playbooks
+    prompt: "Enable playbook learning (extracts patterns for future agents)?"
+    type: boolean
+    default: true
+    description: "When enabled, the Reflection agent extracts implementation patterns into reusable playbooks"
+
+  - id: coverage_threshold
+    prompt: "Minimum test coverage threshold (%):"
+    type: number
+    default: 80
+    description: "Stories must meet this coverage threshold to pass quality gates"
+
+  - id: enable_batch_processing
+    prompt: "Enable batch story processing?"
+    type: boolean
+    default: true
+    description: "Allows processing multiple stories in sequence with complexity routing"
+
+  - id: require_code_citations
+    prompt: "Require code citations in Inspector validation?"
+    type: boolean
+    default: true
+    description: "Inspector must provide file:line evidence for all task verifications"
+
+  - id: auto_fix_critical_issues
+    prompt: "Auto-fix critical/high issues from code review?"
+    type: boolean
+    default: true
+    description: "When enabled, Builder agent resumes to fix critical/high issues found by Reviewer"
+
+# Output configuration
+output:
+  agents_dir: "agents"
+  workflows_dir: "workflows"

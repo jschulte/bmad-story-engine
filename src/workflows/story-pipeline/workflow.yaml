@@ -1,0 +1,170 @@
+name: story-pipeline
+description: "Enhanced multi-agent pipeline with playbook learning, code citation evidence, test quality validation, and resume-builder fixes"
+author: "BMAD Method"
+version: "4.0.0" # Added playbook learning, test quality, coverage gates, Inspector code citations
+
+# Execution mode
+execution_mode: "multi_agent" # multi_agent | single_agent (fallback)
+
+# Critical variables from config
+config_source: "{project-root}/_bmad/bmm/config.yaml"
+output_folder: "{config_source}:output_folder"
+sprint_artifacts: "{config_source}:sprint_artifacts"
+communication_language: "{config_source}:communication_language"
+date: system-generated
+
+# Workflow paths
+installed_path: "{project-root}/_bmad/bse/workflows/story-pipeline"
+instructions: "{installed_path}/workflow.md"
+agents_path: "{installed_path}/agents"
+
+# Agent tracking (from GSD)
+agent_history: "{sprint_artifacts}/agent-history.json"
+current_agent_id: "{sprint_artifacts}/current-agent-id.txt"
+
+# State management
+state_file: "{sprint_artifacts}/story-pipeline-state-{{story_id}}.yaml"
+audit_trail: "{sprint_artifacts}/audit-story-pipeline-{{story_id}}-{{date}}.yaml"
+
+# Multi-agent configuration
+agents:
+  builder:
+    description: "Implementation agent - writes code and tests"
+    steps: [1, 2, 3, 4]
+    subagent_type: "general-purpose"
+    bmad_agent: "{project-root}/_bmad/bse/agents/builder.md" # Bob the Builder - TDD Implementation Specialist
+    prompt_file: "{agents_path}/builder.md"
+    trust_level: "low" # Assumes agent will cut corners
+    timeout: 3600 # 1 hour
+
+  inspector:
+    description: "Validation agent - independent verification with code citations"
+    steps: [5, 6]
+    subagent_type: "testing-suite:test-engineer" # Specialized for test/verification tasks
+    bmad_agent: "{project-root}/_bmad/bse/agents/inspector.md" # BMAD Inspector persona
+    prompt_file: "{agents_path}/inspector.md"
+    fresh_context: true # No knowledge of builder agent
+    trust_level: "medium" # No conflict of interest
+    timeout: 1800 # 30 minutes
+    require_code_citations: true # v4.0: Must provide file:line evidence for all tasks
+
+  test_quality:
+    description: "Test quality validation - verifies test coverage and quality"
+    steps: [5.5]
+    subagent_type: "testing-suite:test-engineer" # Specialized for test quality analysis
+    bmad_agent: "{project-root}/_bmad/bse/agents/test-quality.md" # Tessa - Test Quality Analyst
+    prompt_file: "{agents_path}/test-quality.md"
+    fresh_context: true
+    trust_level: "medium"
+    timeout: 1200 # 20 minutes
+
+  reviewer:
+    description: "Adversarial code review - finds problems"
+    steps: [7]
+    subagent_type: "multi-agent-review" # Spawns multiple reviewers
+    bmad_agent: "{project-root}/_bmad/bse/agents/reviewer.md" # Rex - Adversarial Reviewer
+    prompt_file: "{agents_path}/reviewer.md"
+    fresh_context: true
+    adversarial: true # Goal: find issues
+    trust_level: "high" # Wants to find problems
+    timeout: 1800 # 30 minutes
+    review_agent_count:
+      micro: 2 # Security + Architect (v3.2.0+)
+      standard: 3 # Security + Logic + Architect (v3.2.0+)
+      complex: 4 # Security + Logic + Architect + Quality (v3.2.0+)
+    review_types:
+      security: "{agents_path}/reviewer.md" # Security focus
+      logic: "{agents_path}/reviewer.md" # Logic/performance focus
+      architect: "{agents_path}/architect-integration-reviewer.md" # Architecture/routing/integration (v3.2.0+)
+      quality: "{agents_path}/reviewer.md" # Code quality (complex only)
+
+  fixer:
+    description: "Issue resolution - Bob resumes to fix critical/high issues"
+    steps: [8, 9]
+    subagent_type: "general-purpose"
+    bmad_agent: "{project-root}/_bmad/bse/agents/builder.md" # Bob resumes - "Can we fix it? Yes we can!"
+    resume_builder: true # IMPORTANT: Resume Builder agent instead of spawning fresh
+    prompt_file: "{agents_path}/fixer.md"
+    trust_level: "medium" # Incentive to minimize work
+    timeout: 2400 # 40 minutes
+
+  reflection:
+    description: "Playbook learning - extracts patterns for future agents"
+    steps: [10]
+    subagent_type: "general-purpose"
+    bmad_agent: "{project-root}/_bmad/bse/agents/reflection.md" # Rita - Knowledge Curator
+    prompt_file: "{agents_path}/reflection.md"
+    timeout: 900 # 15 minutes
+
+# Reconciliation: orchestrator does this directly (see workflow.md Phase 5)
+
+# Playbook configuration (v4.0)
+playbooks:
+  enabled: true # Set to false in project config to disable
+  directory: "docs/playbooks/implementation-playbooks"
+  bootstrap_mode: true # Auto-initialize if missing
+  max_load: 3
+  auto_apply_updates: false # Require manual review of playbook updates
+  discovery:
+    enabled: true # Scan git/docs to populate initial playbooks
+    sources: ["git_history", "docs", "existing_code"]
+
+# Quality gates (v4.0)
+quality_gates:
+  coverage_threshold: 80 # % line coverage required
+  task_verification: "all_with_evidence" # Inspector must provide file:line citations
+  critical_issues: "must_fix"
+  high_issues: "must_fix"
+
+# Complexity level (determines which steps to execute)
+complexity_level: "standard" # micro | standard | complex
+
+# Complexity routing
+complexity_routing:
+  micro:
+    skip_agents: [] # Full pipeline (v4.0: micro gets security scan)
+    description: "Lightweight path for low-risk stories"
+    examples: ["UI tweaks", "text changes", "simple CRUD"]
+
+  standard:
+    skip_agents: [] # Full pipeline
+    description: "Balanced path for medium-risk stories"
+    examples: ["API endpoints", "business logic"]
+
+  complex:
+    skip_agents: [] # Full pipeline + enhanced review
+    description: "Enhanced validation for high-risk stories"
+    examples: ["Auth", "payments", "security", "migrations"]
+    review_focus: ["security", "performance", "architecture"]
+
+# Final verification checklist (main orchestrator)
+final_verification:
+  enabled: true
+  checks:
+    - name: "git_commits"
+      command: "git log --oneline -3 | grep {{story_key}}"
+      failure_message: "No commit found for {{story_key}}"
+
+    - name: "story_checkboxes"
+      command: |
+        before=$(git show HEAD~1:{{story_file}} | grep -c '^- \[x\]')
+        after=$(grep -c '^- \[x\]' {{story_file}})
+        [ $after -gt $before ]
+      failure_message: "Story checkboxes not updated"
+
+    - name: "sprint_status"
+      command: "git diff HEAD~1 {{sprint_status}} | grep '{{story_key}}'"
+      failure_message: "Sprint status not updated"
+
+    - name: "tests_passed"
+      # Parse agent output for test evidence
+      validation: "inspector_output must contain 'PASS' or test count"
+      failure_message: "No test evidence in validation output"
+
+# Backward compatibility
+fallback_to_v1:
+  enabled: true
+  condition: "execution_mode == 'single_agent'"
+  workflow: "{project-root}/_bmad/bse/workflows/story-pipeline"
+
+standalone: true

@@ -1,0 +1,43 @@
+{
+  "name": "bmad-story-engine",
+  "version": "1.0.0",
+  "description": "Multi-agent story development engine for BMAD-METHOD with gap analysis, batch processing, playbook learning, and quality gates",
+  "keywords": [
+    "bmad",
+    "bmad-method",
+    "bmad-module",
+    "ai-driven-development",
+    "multi-agent",
+    "tdd",
+    "story-pipeline",
+    "story-engine",
+    "gap-analysis",
+    "code-review"
+  ],
+  "author": "Jonah Schulte",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jschulte/bmad-story-engine.git"
+  },
+  "bugs": {
+    "url": "https://github.com/jschulte/bmad-story-engine/issues"
+  },
+  "homepage": "https://github.com/jschulte/bmad-story-engine#readme",
+  "files": [
+    "src/**/*",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "peerDependencies": {
+    "bmad-method": ">=6.0.0"
+  },
+  "bmad": {
+    "type": "module",
+    "moduleDefinition": "src/module.yaml",
+    "code": "bse"
+  }
+}
