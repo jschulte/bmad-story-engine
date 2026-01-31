@@ -575,7 +575,68 @@ Complexity: {{complexity_level}}
 })
 ```
 
-### Step 3: Wait for all agents in wave to complete
+### Step 3: Poll Progress While Waiting
+
+**Don't just wait idle - poll progress artifacts every 60-90 seconds.**
+
+While agents run in background, periodically check their progress:
+
+```bash
+# Poll progress files for this wave
+for story in {{wave_stories}}; do
+  PROGRESS="docs/sprint-artifacts/completions/${story}-progress.json"
+  if [ -f "$PROGRESS" ]; then
+    # Extract current phase and status
+    PHASE=$(jq -r '.current_phase' "$PROGRESS")
+    echo "${story}: ${PHASE}"
+  else
+    echo "${story}: STARTING..."
+  fi
+done
+```
+
+**Display live progress update:**
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🌊 WAVE {{wave_number}} IN PROGRESS ({{elapsed}})
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+| Story | Phase | Status |
+|-------|-------|--------|
+| 6-1 | BUILD | 🔨 Metis implementing... |
+| 6-3 | VERIFY | 👁️ 4 reviewers checking... |
+| 6-6 | PREPARE | 📋 Loading playbooks... |
+
+Next update in ~60s...
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+**Phase status icons:**
+- PREPARE: 📋
+- BUILD: 🔨
+- VERIFY: 👁️
+- ASSESS: ⚖️
+- REFINE: 🔧
+- COMMIT: 💾
+- REFLECT: 📚
+- COMPLETE: ✅
+
+**Polling frequency:**
+- First check: 60 seconds after spawn
+- Subsequent: Every 60-90 seconds
+- Stop polling when all agents complete
+
+**Implementation:**
+```
+WHILE any agent still running:
+  SLEEP 60 seconds
+  FOR each story in wave:
+    READ progress artifact
+    DISPLAY current phase
+  END FOR
+  DISPLAY progress table
+END WHILE
+```
 
 ### Step 4: Display Wave Summary
 
