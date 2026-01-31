@@ -629,27 +629,25 @@ END WHILE
 
 📍 6-1: BUILD → VERIFY (phase changed)
 
-| Story | Phase | Status |
-|-------|-------|--------|
-| 6-1 | VERIFY | 👁️ 4 reviewers checking... |
-| 6-3 | BUILD | 🔨 Metis implementing... |
-| 6-6 | PREPARE | 📋 Loading playbooks... |
+  6-1   👁️ VERIFY    4 reviewers checking...
+  6-3   🔨 BUILD     Metis implementing...
+  6-6   📋 PREPARE   Loading playbooks...
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
 **Phase status icons:**
-| Phase | Icon | Description |
-|-------|------|-------------|
-| STARTING | ⏳ | Agent initializing |
-| PREPARE | 📋 | Loading story & playbooks |
-| BUILD | 🔨 | Metis implementing |
-| VERIFY | 👁️ | Reviewers checking |
-| ASSESS | ⚖️ | Themis triaging |
-| REFINE | 🔧 | Fixing issues |
-| COMMIT | 💾 | Reconciling & committing |
-| REFLECT | 📚 | Mnemosyne learning |
-| COMPLETE | ✅ | Done |
+```
+⏳ STARTING   Agent initializing
+📋 PREPARE    Loading story & playbooks
+🔨 BUILD      Metis implementing
+👁️ VERIFY     Reviewers checking
+⚖️ ASSESS     Themis triaging
+🔧 REFINE     Fixing issues
+💾 COMMIT     Reconciling & committing
+📚 REFLECT    Mnemosyne learning
+✅ COMPLETE   Done
+```
 
 **Polling behavior:**
 - **Frequency:** Every 30 seconds
@@ -682,27 +680,25 @@ for story in {{wave_stories}}; do
 done
 ```
 
-**Display format (table summary + phase details):**
+**Display format (terminal-friendly):**
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 🌊 WAVE {{wave_number}} COMPLETE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-| Story | Status | Tests | Coverage | Issues | Commit |
-|-------|--------|-------|----------|--------|--------|
-| 5-1 | ✅ done | 25 | 97.6% | 4→0 | 8a1a0f0 |
-| 5-2 | ✅ done | 22 | 100% | 2→0 | 481c7fd |
-| 5-3 | ✅ done | 32 | 89.2% | 6→0 | e94460c |
+  5-1  ✅ done   25 tests   97.6% cov   4→0 issues   8a1a0f0
+  5-2  ✅ done   22 tests   100% cov    2→0 issues   481c7fd
+  5-3  ✅ done   32 tests   89.2% cov   6→0 issues   e94460c
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Wave Summary: {{success}}/{{total}} succeeded
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
-**Column definitions:**
-- **Tests**: Number of test files or test cases added
-- **Coverage**: Line coverage percentage (REQUIRED - from progress artifact)
-- **Issues**: Format "found→remaining" (e.g., "4→0" means 4 found, 0 remaining)
+**Column format:** `Story  Status  Tests  Coverage  Issues  Commit`
+- **Tests**: Number of tests (e.g., "25 tests")
+- **Coverage**: Line coverage (e.g., "97.6% cov")
+- **Issues**: found→remaining (e.g., "4→0 issues")
 - **Commit**: Short git hash
 
 **For failures, show phase details:**
@@ -745,7 +741,7 @@ for story in {{all_stories}}; do
 done
 ```
 
-**Display format:**
+**Display format (terminal-friendly):**
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ✅ BATCH COMPLETE
@@ -755,22 +751,19 @@ Stories processed: {{total}}
 Successful: {{success_count}}
 Failed: {{fail_count}}
 
-## Results
+Results:
+  17-10  Occupant Agreement   ✅ done   25 tests   94.2% cov   abc123
+  17-11  Agreement Status     ✅ done   18 tests   87.5% cov   def456
 
-| Story | Title | Status | Tests | Coverage | Commit |
-|-------|-------|--------|-------|----------|--------|
-| 17-10 | Occupant Agreement | ✅ done | 25 | 94.2% | abc123 |
-| 17-11 | Agreement Status | ✅ done | 18 | 87.5% | def456 |
-
-## Next Steps
-- Run /bmad:sprint-status to verify
-- Review commits with git log
+Next Steps:
+  • Run /bmad:sprint-status to verify
+  • Review commits with git log
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
-**Coverage column rules:**
-- Always show percentage from progress artifact metrics
-- If coverage not captured, show "-" (but this indicates a pipeline bug)
+**Row format:** `Story  Title  Status  Tests  Coverage  Commit`
 - Coverage should ALWAYS be populated - it's a required quality gate
+- If coverage missing, show "-" (indicates pipeline bug)
 </step>
 
 </process>
