@@ -52,18 +52,26 @@ Wave 3 (depends on Wave 2):
 3. Keyword scanning for story references
 4. Epic ordering fallback (lower numbers first)
 
-### Progress Artifacts & Live Polling
-Each pipeline writes progress at every phase. The orchestrator polls these every 60-90 seconds to show live status:
+### Progress Artifacts & Smart Polling
+Each pipeline writes progress at every phase. The orchestrator polls every 30 seconds but **only displays when something changes**:
+
+```
+📍 6-1: BUILD → VERIFY
+📍 6-3: PREPARE → BUILD
+✅ 6-6: COMPLETE (2m 15s)
+```
+
+Live status table (shown on change):
 
 > **🌊 WAVE 1 IN PROGRESS** (2m 30s)
 
 | Story | Phase | Status |
 |-------|-------|--------|
-| 6-1 | BUILD | 🔨 Metis implementing... |
-| 6-3 | VERIFY | 👁️ 4 reviewers checking... |
-| 6-6 | ASSESS | ⚖️ Themis triaging... |
+| 6-1 | VERIFY | 👁️ 4 reviewers checking... |
+| 6-3 | BUILD | 🔨 Metis implementing... |
+| 6-6 | ✅ | Complete |
 
-When complete, shows detailed results:
+When all complete, shows detailed results:
 
 > **🌊 WAVE 1 COMPLETE**
 

@@ -575,68 +575,98 @@ Complexity: {{complexity_level}}
 })
 ```
 
-### Step 3: Poll Progress While Waiting
+### Step 3: Poll Progress While Waiting (Smart Polling)
 
-**Don't just wait idle - poll progress artifacts every 60-90 seconds.**
+**Poll every 30 seconds, but only display when something changes.**
 
-While agents run in background, periodically check their progress:
-
-```bash
-# Poll progress files for this wave
-for story in {{wave_stories}}; do
-  PROGRESS="docs/sprint-artifacts/completions/${story}-progress.json"
-  if [ -f "$PROGRESS" ]; then
-    # Extract current phase and status
-    PHASE=$(jq -r '.current_phase' "$PROGRESS")
-    echo "${story}: ${PHASE}"
-  else
-    echo "${story}: STARTING..."
-  fi
-done
+**State tracking:**
+```
+# Track last known state for each story
+LAST_STATE = {}  # { "6-1": "BUILD", "6-3": "PREPARE", ... }
 ```
 
-**Display live progress update:**
+**Polling loop:**
+```
+WHILE any agent still running:
+  SLEEP 30 seconds
+
+  changes_detected = false
+  current_states = {}
+
+  FOR each story in wave:
+    PROGRESS = "docs/sprint-artifacts/completions/${story}-progress.json"
+
+    IF file exists:
+      phase = READ progress artifact -> current_phase
+      details = READ progress artifact -> phases[phase].details
+    ELSE:
+      phase = "STARTING"
+      details = "Initializing..."
+    END IF
+
+    current_states[story] = phase
+
+    IF phase != LAST_STATE[story]:
+      changes_detected = true
+      # Log the transition
+      PRINT "📍 ${story}: ${LAST_STATE[story]} → ${phase}"
+    END IF
+  END FOR
+
+  IF changes_detected:
+    DISPLAY full progress table
+  END IF
+
+  LAST_STATE = current_states
+END WHILE
+```
+
+**Display on change:**
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 🌊 WAVE {{wave_number}} IN PROGRESS ({{elapsed}})
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+📍 6-1: BUILD → VERIFY (phase changed)
+
 | Story | Phase | Status |
 |-------|-------|--------|
-| 6-1 | BUILD | 🔨 Metis implementing... |
-| 6-3 | VERIFY | 👁️ 4 reviewers checking... |
+| 6-1 | VERIFY | 👁️ 4 reviewers checking... |
+| 6-3 | BUILD | 🔨 Metis implementing... |
 | 6-6 | PREPARE | 📋 Loading playbooks... |
 
-Next update in ~60s...
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
 **Phase status icons:**
-- PREPARE: 📋
-- BUILD: 🔨
-- VERIFY: 👁️
-- ASSESS: ⚖️
-- REFINE: 🔧
-- COMMIT: 💾
-- REFLECT: 📚
-- COMPLETE: ✅
+| Phase | Icon | Description |
+|-------|------|-------------|
+| STARTING | ⏳ | Agent initializing |
+| PREPARE | 📋 | Loading story & playbooks |
+| BUILD | 🔨 | Metis implementing |
+| VERIFY | 👁️ | Reviewers checking |
+| ASSESS | ⚖️ | Themis triaging |
+| REFINE | 🔧 | Fixing issues |
+| COMMIT | 💾 | Reconciling & committing |
+| REFLECT | 📚 | Mnemosyne learning |
+| COMPLETE | ✅ | Done |
 
-**Polling frequency:**
-- First check: 60 seconds after spawn
-- Subsequent: Every 60-90 seconds
-- Stop polling when all agents complete
+**Polling behavior:**
+- **Frequency:** Every 30 seconds
+- **Display:** Only when phase changes detected
+- **Quiet mode:** No output if nothing changed (avoids spam)
+- **Completion:** Show final status when agent finishes
 
-**Implementation:**
+**Transition announcements:**
+When a story changes phase, announce it inline:
 ```
-WHILE any agent still running:
-  SLEEP 60 seconds
-  FOR each story in wave:
-    READ progress artifact
-    DISPLAY current phase
-  END FOR
-  DISPLAY progress table
-END WHILE
+📍 6-1: BUILD → VERIFY
+📍 6-3: PREPARE → BUILD
+📍 6-6: VERIFY → ASSESS
+✅ 6-1: COMPLETE (3m 42s)
 ```
+
+This gives real-time feel without flooding the screen with unchanged status.
 
 ### Step 4: Display Wave Summary
 
