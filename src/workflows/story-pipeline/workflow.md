@@ -847,16 +847,22 @@ Update `docs/sprint-artifacts/completions/{{story_key}}-progress.json`:
     "PREPARE": { "status": "complete", "details": "..." },
     "BUILD": { "status": "complete", "details": "..." },
     "VERIFY": { "status": "complete", "details": "..." },
-    "ASSESS": { "status": "complete", "details": "{{must_fix}} MUST_FIX, {{should_fix}} SHOULD_FIX, {{style}} STYLE" },
+    "ASSESS": { "status": "complete", "details": "{{coverage}}% coverage, {{must_fix}} MUST_FIX" },
     "REFINE": { "status": "{{must_fix > 0 ? 'in_progress' : 'skipped'}}", "details": "{{must_fix}} issues to fix" },
     ...
   },
   "metrics": {
+    "coverage": "{{COVERAGE}}",
     "must_fix": {{must_fix}},
     "should_fix": {{should_fix}},
     "style": {{style}}
   }
 }
+```
+
+**CRITICAL:** Coverage MUST be captured here. It comes from the coverage gate check:
+```bash
+COVERAGE=$(grep -E "All files|Statements" coverage-output.txt | head -1 | grep -oE "[0-9]+\.[0-9]+" | head -1)
 ```
 
 **📢 Orchestrator says (if issues remain):**
@@ -1157,8 +1163,8 @@ Update `docs/sprint-artifacts/completions/{{story_key}}-progress.json`:
     "PREPARE": { "status": "complete", "details": "..." },
     "BUILD": { "status": "complete", "details": "{{files_created}} files, {{lines_added}} lines" },
     "VERIFY": { "status": "complete", "details": "{{AGENT_COUNT}} reviewers, {{total_issues}} issues" },
-    "ASSESS": { "status": "complete", "details": "{{must_fix}} MUST_FIX, {{should_fix}} SHOULD_FIX" },
-    "REFINE": { "status": "complete", "details": "{{iterations}} iterations" },
+    "ASSESS": { "status": "complete", "details": "{{coverage}}% coverage, {{must_fix}} MUST_FIX" },
+    "REFINE": { "status": "complete", "details": "{{iterations}} iterations, {{must_fix}}→0 issues" },
     "COMMIT": { "status": "complete", "details": "Committed: {{git_commit}}" },
     "REFLECT": { "status": "complete", "details": "{{playbook_action}}" }
   },

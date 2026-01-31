@@ -432,34 +432,38 @@ for story in {{wave_stories}}; do
 done
 ```
 
-**Display format:**
+**Display format (table summary + phase details):**
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 🌊 WAVE {{wave_number}} COMPLETE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-{{story_key_1}}:
-  ✓ PREPARE: {{complexity}}, {{playbook_count}} playbooks
-  ✓ BUILD: {{files_created}} files, {{lines_added}} lines
-  ✓ VERIFY: {{agent_count}} reviewers, {{issues_found}} issues
-  ✓ ASSESS: {{must_fix}} MUST_FIX, {{should_fix}} logged
-  ✓ REFINE: {{iterations}} iterations
-  ✓ COMMIT: {{git_commit}}
-  ✓ REFLECT: {{playbook_action}}
-
-{{story_key_2}}:
-  ✓ PREPARE: ...
-  ✓ BUILD: ...
-  ...
-
-{{story_key_3}}:
-  ⚠ BUILD: ...
-  ✗ VERIFY: Failed - {{error}}
-  ⏳ Remaining phases skipped
+| Story | Status | Tests | Coverage | Issues | Commit |
+|-------|--------|-------|----------|--------|--------|
+| 5-1 | ✅ done | 25 | 97.6% | 4→0 | 8a1a0f0 |
+| 5-2 | ✅ done | 22 | 100% | 2→0 | 481c7fd |
+| 5-3 | ✅ done | 32 | 89.2% | 6→0 | e94460c |
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Wave Summary: {{success}}/{{total}} succeeded
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+**Column definitions:**
+- **Tests**: Number of test files or test cases added
+- **Coverage**: Line coverage percentage (REQUIRED - from progress artifact)
+- **Issues**: Format "found→remaining" (e.g., "4→0" means 4 found, 0 remaining)
+- **Commit**: Short git hash
+
+**For failures, show phase details:**
+```
+5-3 (FAILED):
+  ✓ PREPARE: standard, 2 playbooks
+  ✓ BUILD: 8 files, 423 lines
+  ✗ VERIFY: Cerberus found critical security issue
+  ⏳ ASSESS: Skipped
+  ⏳ REFINE: Skipped
+  ⏳ COMMIT: Skipped
 ```
 
 **Status icons:**
@@ -467,6 +471,8 @@ Wave Summary: {{success}}/{{total}} succeeded
 - ⚠ = Completed with warnings
 - ✗ = Failed
 - ⏳ = Pending/Skipped
+
+**Coverage must always be populated.** If missing, it indicates a bug in the pipeline - the coverage gate in Phase 4 should always capture this metric.
 
 ### Step 5: Orchestrator reconciles each completed story
 
@@ -481,6 +487,15 @@ For each successful story:
 <step name="summary">
 **Display Batch Summary**
 
+Read all progress artifacts to compile final summary:
+```bash
+for story in {{all_stories}}; do
+  PROGRESS="docs/sprint-artifacts/completions/${story}-progress.json"
+  [ -f "$PROGRESS" ] && cat "$PROGRESS"
+done
+```
+
+**Display format:**
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ✅ BATCH COMPLETE
@@ -492,15 +507,20 @@ Failed: {{fail_count}}
 
 ## Results
 
-| Story | Status | Tasks | Commit |
-|-------|--------|-------|--------|
-| 17-10 | ✅ done | 8/8 | abc123 |
-| 17-11 | ✅ done | 5/5 | def456 |
+| Story | Title | Status | Tests | Coverage | Commit |
+|-------|-------|--------|-------|----------|--------|
+| 17-10 | Occupant Agreement | ✅ done | 25 | 94.2% | abc123 |
+| 17-11 | Agreement Status | ✅ done | 18 | 87.5% | def456 |
 
 ## Next Steps
 - Run /bmad:sprint-status to verify
 - Review commits with git log
 ```
+
+**Coverage column rules:**
+- Always show percentage from progress artifact metrics
+- If coverage not captured, show "-" (but this indicates a pipeline bug)
+- Coverage should ALWAYS be populated - it's a required quality gate
 </step>
 
 </process>
