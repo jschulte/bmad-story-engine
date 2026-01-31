@@ -19,16 +19,20 @@ Orchestrator coordinates. Agents do implementation. Orchestrator does reconcilia
 
 <config>
 name: batch-stories
-version: 3.2.0
+version: 3.4.0
 
 modes:
   sequential: {description: "Process one-by-one in this session", recommended_for: "gap analysis"}
   parallel: {description: "Spawn concurrent Task agents", recommended_for: "greenfield batch"}
 
 complexity_routing:
-  micro: {max_tasks: 3, max_files: 5, skip_review: true}
-  standard: {max_tasks: 15, max_files: 30, full_pipeline: true}
-  complex: {min_tasks: 16, keywords: [auth, security, payment, migration], enhanced_review: true}
+  # 6-tier scale - see story-pipeline/workflow.md for full details
+  trivial: {max_tasks: 1, agents: 1, triggers: [static, policy, content, copy, config]}
+  micro: {max_tasks: 2, agents: 2, triggers: [no API, no user input]}
+  light: {max_tasks: 4, agents: 3, triggers: [basic CRUD, simple form]}
+  standard: {max_tasks: 10, agents: 4, triggers: [API integration, user input]}
+  complex: {max_tasks: 15, agents: 5, triggers: [auth, migration, database]}
+  critical: {min_tasks: 16, agents: 6, triggers: [payment, encryption, PII, credentials]}
 
 defaults:
   auto_create_missing: true  # Automatically create missing story files using greenfield workflow
@@ -61,11 +65,11 @@ This workflow runs in the **main Claude context** (the orchestrator). The orches
 
 **When spawning Task agents:**
 - Only spawn Tasks for phases explicitly defined in story-pipeline/workflow.md
-- Phase 1: builder agent (Mason)
-- Phase 2: inspector, test_quality, reviewers (Vera, Tessa, Rex, etc.)
-- Phase 3: fixer (Mason resumed)
-- Phase 4: inspector (Vera re-check)
-- Phase 6: reflection (Rita)
+- Phase 2: BUILD - Metis (builder)
+- Phase 3: VERIFY - Argus (inspector), Nemesis (test quality), reviewers (Cerberus/Apollo/Hestia/Arete/Iris)
+- Phase 4: ASSESS - Themis (arbiter) triages issues
+- Phase 5: REFINE - Metis resumed with MUST_FIX issues, iterative loop
+- Phase 7: REFLECT - Mnemosyne (reflection)
 
 **Why this matters:**
 The story-pipeline ensures proper verification, testing, and quality gates. Spawning ad-hoc "implementation" agents bypasses these safeguards and leads to incomplete or untested implementations.
@@ -279,15 +283,19 @@ Read: `{project-root}/_bmad/bse/workflows/story-pipeline/workflow.md`
 The workflow describes spawning these Tasks - spawn them DIRECTLY:
 
 ```
-Phase 0: Playbook Query (orchestrator does this, no Task)
-Phase 1: Task({ description: "🔨 Mason building {{story_key}}", ... })  ← VISIBLE
-Phase 2: Task({ description: "🕵️ Vera validating {{story_key}}", ... })   ← VISIBLE
-         Task({ description: "🧪 Tessa testing {{story_key}}", ... })     ← VISIBLE
-         Task({ description: "🔴 Sasha/Leo/Rosie/Quinn reviewing {{story_key}}", ... })  ← VISIBLE (x N)
-Phase 3: Task({ description: "🔨 Mason refining {{story_key}}", resume: ID }) ← VISIBLE
-Phase 4: Task({ description: "🕵️ Vera re-checking {{story_key}}", ... }) ← VISIBLE
-Phase 5: Reconciliation (orchestrator does this, no Task)
-Phase 6: Task({ description: "📚 Rita reflecting on {{story_key}}", ... }) ← VISIBLE
+Phase 1: PREPARE - Story quality gate + playbook query (orchestrator, no Task)
+Phase 2: BUILD - Task({ description: "🔨 Metis building {{story_key}}", ... })  ← VISIBLE
+Phase 3: VERIFY - Task({ description: "👁️ Argus inspecting {{story_key}}", ... })   ← VISIBLE
+         Task({ description: "🧪 Nemesis testing {{story_key}}", ... })     ← VISIBLE
+         Task({ description: "🔐🏛️⚡✨🌈 Reviewers reviewing {{story_key}}", ... })  ← VISIBLE (x N based on tier)
+Phase 4: ASSESS - Coverage gate + Task({ description: "⚖️ Themis triaging {{story_key}}", ... }) ← VISIBLE
+Phase 5: REFINE - ITERATIVE LOOP (max 3 iterations):
+         Task({ description: "🔨 Metis fixing (iter N) {{story_key}}", resume: ID }) ← VISIBLE
+         Task({ description: "[Reviewer] verifying fix {{story_key}}", resume: ID }) ← VISIBLE (only reviewers with MUST_FIX)
+         Task({ description: "👁️ Fresh eyes on {{story_key}}", ... }) ← VISIBLE (iter 2+)
+         Loop until: zero MUST_FIX remaining OR max iterations
+Phase 6: COMMIT - Reconciliation (orchestrator does this, no Task)
+Phase 7: REFLECT - Task({ description: "📚 Mnemosyne reflecting on {{story_key}}", ... }) ← VISIBLE
 ```
 
 **Why this matters:** By NOT wrapping the pipeline in a Task, each agent spawn becomes a top-level Task that the user can see in Claude Code's UI.
@@ -438,14 +446,17 @@ Failed: {{fail_count}}
 <failure_handling>
 **Story file missing:** Skip with warning, continue to next.
 **Pipeline fails:** Mark story as failed, continue to next.
+**Iterative refinement exhausted:** User escalation, then continue or halt.
 **Reconciliation fails:** Fix with Edit tool, retry verification.
 **All stories fail:** Report systemic issue, halt batch.
 </failure_handling>
 
 <success_criteria>
 - [ ] All selected stories processed
+- [ ] Each story has zero MUST_FIX issues (or user accepted remaining)
 - [ ] Each story has checked tasks (count > 0)
 - [ ] Each story has Dev Agent Record filled
+- [ ] SHOULD_FIX/STYLE logged as tech debt (if any)
 - [ ] Sprint status updated for all stories
 - [ ] Summary displayed with results
 </success_criteria>

@@ -1,6 +1,6 @@
-# Story-Full-Pipeline v4.0
+# Story Pipeline v6.0 - Greek Pantheon Edition
 
-Enhanced multi-agent pipeline with playbook learning, code citation evidence, test quality validation, and resume-builder fixes.
+Enhanced multi-agent pipeline featuring the Greek Pantheon: Metis (builder), Argus (inspector), Nemesis (test quality), specialized reviewers (Cerberus, Apollo, Hestia, Arete, Iris), Themis (arbiter for triage), and Mnemosyne (reflection).
 
 ## What's New in v4.0
 
@@ -53,33 +53,41 @@ Enhanced multi-agent pipeline with playbook learning, code citation evidence, te
 - Auto-generates playbook updates for future agents
 - Bootstrap mode: auto-initializes playbooks if missing
 
-## Pipeline Flow
+## Pipeline Flow - 7 Named Phases
 
 ```
-Phase 0: Playbook Query (orchestrator)
+Phase 1: PREPARE ──────────────────────────────────────
+         Story quality gate + playbook query
          ↓
-Phase 1: Builder (initial implementation)
+Phase 2: BUILD ────────────────────────────────────────
+         🔨 Metis (initial implementation with TDD)
          ↓
-Phase 2: Inspector + Test Quality + N Reviewers (parallel)
+Phase 3: VERIFY ───────────────────────────────────────
+         👁️ Argus + 🧪 Nemesis + Reviewers (parallel)
          ↓
-Phase 2.5: Coverage Gate (automated)
+Phase 4: ASSESS ───────────────────────────────────────
+         Coverage gate + ⚖️ Themis triages issues
          ↓
-Phase 3: Resume Builder (fix issues with context)
+Phase 5: REFINE ───────────────────────────────────────
+         🔨 Metis fixes MUST_FIX (iterative loop, max 3)
          ↓
-Phase 4: Inspector re-check (quick verification)
+Phase 6: COMMIT ───────────────────────────────────────
+         Orchestrator reconciliation (evidence-based)
          ↓
-Phase 5: Orchestrator reconciliation (evidence-based)
-         ↓
-Phase 6: Playbook Reflection (extract learnings)
+Phase 7: REFLECT ──────────────────────────────────────
+         📚 Mnemosyne updates playbooks
 ```
 
-## Complexity Routing
+## 6-Tier Complexity Routing
 
-| Complexity | Phase 2 Agents | Total | Reviewers |
-|------------|----------------|-------|-----------|
-| micro | Inspector + Test Quality + 2 | 4 agents | Security + Architect |
-| standard | Inspector + Test Quality + 3 | 5 agents | Security + Logic + Architect |
-| complex | Inspector + Test Quality + 4 | 6 agents | Security + Logic + Architect + Quality |
+| Tier | Phase 3 Agents | Reviewers |
+|------|----------------|-----------|
+| **trivial** | Argus only | None (1 agent) |
+| **micro** | Argus + Nemesis + 2 | Cerberus + Hestia |
+| **light** | Argus + Nemesis + 3 | Cerberus + Hestia + Apollo |
+| **standard** | Argus + Nemesis + 4 | Cerberus + Hestia + Apollo + Arete |
+| **complex** | Argus + Nemesis + 5 | All above + Iris (if frontend) |
+| **critical** | Argus + Nemesis + 6 | All reviewers |
 
 ## Quality Gates
 
@@ -120,16 +128,22 @@ Unlike the multi-agent coordination failures documented in CooperBench (Stanford
 
 The workflow uses agents for **verification parallelism**, not **implementation parallelism** - avoiding the "curse of coordination."
 
-## Files
+## Files - Greek Pantheon Agents
 
-**Agent Prompts:**
-- `agents/builder.md` - Implementation agent (with playbook awareness)
-- `agents/inspector.md` - Validation agent (requires code citations)
-- `agents/test-quality.md` - Test quality validation (v4.0)
-- `agents/reviewer.md` - Adversarial review agent
-- `agents/architect-integration-reviewer.md` - Architecture/integration review
-- `agents/fixer.md` - Issue resolution agent (deprecated, uses resume Builder)
-- `agents/reflection.md` - Playbook learning agent (v4.0)
+**Core Agents:**
+- `agents/builder.md` - **Metis** 🔨 - Implementation agent (with playbook awareness)
+- `agents/inspector.md` - **Argus** 👁️ - Validation agent (requires code citations)
+- `agents/test-quality.md` - **Nemesis** 🧪 - Test quality validation
+- `agents/arbiter.md` - **Themis** ⚖️ - Issue triage (MUST_FIX/SHOULD_FIX/STYLE)
+- `agents/fixer.md` - **Metis** 🔨 (resumed) - Issue resolution
+- `agents/reflection.md` - **Mnemosyne** 📚 - Playbook learning agent
+
+**Reviewer Squad:**
+- `agents/security-reviewer.md` - **Cerberus** 🔐 - Security review
+- `agents/logic-reviewer.md` - **Apollo** ⚡ - Logic/performance review
+- `agents/architect-integration-reviewer.md` - **Hestia** 🏛️ - Architecture review
+- `agents/quality-reviewer.md` - **Arete** ✨ - Code quality review
+- `agents/ux-accessibility-reviewer.md` - **Iris** 🌈 - Accessibility review
 
 **Workflow Config:**
 - `workflow.yaml` - Main configuration (v4.0)

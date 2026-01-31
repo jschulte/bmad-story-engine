@@ -6,7 +6,7 @@ A BMAD-METHOD external module providing a multi-agent story development engine w
 
 This module extends the BMad Method with advanced implementation workflows that orchestrate multiple specialized AI agents to ensure high-quality code delivery through:
 
-- **Multi-Agent Pipelines**: Builder → Inspector → Test Quality → Reviewer → Fixer → Reflection
+- **Multi-Agent Pipelines**: The Greek Pantheon - Metis (Builder) → Argus (Inspector) → Nemesis (Test Quality) → Reviewers → Themis (Arbiter) → Mnemosyne (Reflection)
 - **Gap Analysis**: Validate story tasks against actual codebase implementation
 - **Batch Processing**: Process multiple stories with complexity-based routing
 - **Playbook Learning**: Extract patterns from implementations for future agents
@@ -82,91 +82,85 @@ modules:
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-## Agents
+## Agents - The Greek Pantheon
 
 ### Core Agents
 
-| Agent | Persona | Role |
-|-------|---------|------|
-| `builder` | Mason the Craftsman | TDD Implementation Specialist - "Measure twice, cut once" |
-| `inspector` | Vera the Code Detective | Independent verification with code citations |
-| `reflection` | Rita the Wise Librarian | Knowledge curator for playbook learning |
-| `test-quality` | Tessa the Test Scientist | Test quality analyst and coverage validator |
+| Agent | Greek Name | Domain | Role |
+|-------|------------|--------|------|
+| `builder` | **Metis** 🔨 | Goddess of Wisdom & Craft | TDD Implementation Specialist - "With the wisdom of the Titans" |
+| `inspector` | **Argus** 👁️ | The All-Seeing Giant | Independent verification with code citations - "With a hundred eyes" |
+| `test-quality` | **Nemesis** 🧪 | Goddess of Retribution & Balance | Test quality analyst - "Justice demands tests that assert the truth" |
+| `arbiter` | **Themis** ⚖️ | Titan of Justice | Triages feedback into MUST_FIX / SHOULD_FIX / STYLE |
+| `reflection` | **Mnemosyne** 📚 | Titan of Memory | Knowledge curator - "What is written in memory endures forever" |
 
 ### Reviewer Squad
 
-The pipeline spawns multiple specialized reviewers based on story complexity:
+The pipeline spawns specialized reviewers based on story complexity (6-tier scale):
 
-| Reviewer | Persona | Focus | Used In |
-|----------|---------|-------|---------|
-| `security` | Sasha the Security Sentinel | Vulnerabilities, auth, injection | All stories |
-| `logic` | Leo the Logic Hunter | Bugs, edge cases, performance | Standard + Complex |
-| `architect` | Rosie the Architecture Guardian | Patterns, integration, routes | All stories |
-| `quality` | Quinn the Quality Crusader | Code smells, maintainability | Complex only |
+| Reviewer | Greek Name | Domain | Focus |
+|----------|------------|--------|-------|
+| `security` | **Cerberus** 🔐 | Three-Headed Guardian | Vulnerabilities, auth, injection |
+| `logic` | **Apollo** ⚡ | God of Reason & Truth | Bugs, edge cases, performance |
+| `architect` | **Hestia** 🏛️ | Goddess of Structure | Patterns, integration, routes |
+| `quality` | **Arete** ✨ | Personification of Excellence | Code smells, maintainability |
+| `accessibility` | **Iris** 🌈 | Goddess of the Rainbow | WCAG, ARIA, screen readers |
 
-**Complexity → Reviewers:**
-- **Micro**: Sasha + Rosie (2 reviewers)
-- **Standard**: Sasha + Leo + Rosie (3 reviewers)
-- **Complex**: Sasha + Leo + Rosie + Quinn (4 reviewers)
+### 6-Tier Complexity Routing
+
+| Tier | Reviewers | Description |
+|------|-----------|-------------|
+| **trivial** | 1 (Argus only) | Static content, copy changes |
+| **micro** | 2 (Cerberus + Hestia) | Simple component, no API |
+| **light** | 3 (+Apollo) | Basic CRUD, simple form |
+| **standard** | 4 (+Arete) | API integration, user input |
+| **complex** | 5 (+Iris if frontend) | Auth, migration, database |
+| **critical** | 6 (all reviewers) | Payment, encryption, PII |
 
 ### Conditional Reviewers
 
-These reviewers are **automatically added** when relevant files are detected:
+**Iris** (Accessibility) is **automatically added** when frontend files are detected:
 
-| Reviewer | Persona | Focus | Triggered By |
-|----------|---------|-------|--------------|
-| `ux_accessibility` | Ada the Accessibility Advocate | WCAG, ARIA, keyboard nav, screen readers | Frontend files (*.tsx, *.jsx, *.css, components/*, pages/*) |
-
-**Smart Detection:**
 ```bash
-# Ada is invoked when git diff includes frontend files:
+# Iris is invoked when git diff includes frontend files:
 git diff --name-only | grep -E "\.(tsx|jsx|vue|css|scss|html)$|components/|pages/"
 ```
 
-**Example Outcomes:**
-- Backend API story (only .ts service files) → **No Ada** (saves tokens)
-- Full-stack story (API + components) → **Ada added** to reviewer squad
-- UI-only story (component changes) → **Ada included** for accessibility review
-
-## Story Pipeline Flow
+## Story Pipeline v6.0 - The Greek Pantheon
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                      STORY PIPELINE                          │
+│           STORY PIPELINE v6.0 - GREEK PANTHEON               │
 ├─────────────────────────────────────────────────────────────┤
 │                                                              │
-│  ┌──────────┐    ┌───────────┐    ┌──────────────┐         │
-│  │ BUILDER  │───▶│ INSPECTOR │───▶│ TEST QUALITY │         │
-│  │  (Mason)   │    │  (Vera)   │    │   (Tessa)    │         │
-│  └──────────┘    └───────────┘    └──────────────┘         │
-│       │                                    │                 │
-│       │         Steps 1-4              Steps 5-6            │
-│       │         Implement              Validate              │
-│       │                                    │                 │
-│       │              ┌───────────┐        │                 │
-│       │              │ REVIEWERS │◀───────┘                 │
-│       │              │Sasha/Leo/ │                          │
-│       │              │Rosie/Quinn│                          │
-│       │              └───────────┘                          │
-│       │                   │                                  │
-│       │               Step 7                                │
-│       │           Code Review                               │
-│       │                   │                                  │
-│       │              ┌────▼────┐                            │
-│       └─────────────▶│  FIXER  │  (Mason resumes)          │
-│                      │         │                            │
-│                      └────┬────┘                            │
-│                           │                                  │
-│                       Steps 8-9                             │
-│                       Fix Issues                            │
-│                           │                                  │
-│                      ┌────▼────┐                            │
-│                      │REFLECTION│                           │
-│                      │  (Rita)  │                           │
-│                      └──────────┘                           │
-│                           │                                  │
-│                       Step 10                               │
-│                    Playbook Learning                        │
+│  Phase 1: PREPARE ─────────────────────────────────────────│
+│     Story quality gate + playbook query                     │
+│                                                              │
+│  Phase 2: BUILD ───────────────────────────────────────────│
+│     🔨 Metis implements with TDD                            │
+│                                                              │
+│  Phase 3: VERIFY ──────────────────────────────────────────│
+│     👁️ Argus (Inspector)     ┐                              │
+│     🧪 Nemesis (Test Quality) ├─ Run in parallel            │
+│     🔐 Cerberus (Security)    │                              │
+│     ⚡ Apollo (Logic)         │                              │
+│     🏛️ Hestia (Architecture)  │                              │
+│     ✨ Arete (Quality)        │                              │
+│     🌈 Iris (Accessibility)  ┘                              │
+│                                                              │
+│  Phase 4: ASSESS ──────────────────────────────────────────│
+│     Coverage gate + ⚖️ Themis triages issues                │
+│     (MUST_FIX / SHOULD_FIX / STYLE)                         │
+│                                                              │
+│  Phase 5: REFINE ──────────────────────────────────────────│
+│     🔨 Metis fixes MUST_FIX issues                          │
+│     Loop until clean (max 3 iterations)                     │
+│                                                              │
+│  Phase 6: COMMIT ──────────────────────────────────────────│
+│     Reconcile story, update sprint status                   │
+│                                                              │
+│  Phase 7: REFLECT ─────────────────────────────────────────│
+│     📚 Mnemosyne updates playbooks                          │
 │                                                              │
 └─────────────────────────────────────────────────────────────┘
 ```

@@ -1,26 +1,41 @@
-# Story-Full-Pipeline v4.0 - Enhanced Multi-Agent Pipeline
+# Story Pipeline v6.0 - Greek Pantheon Edition
 
 <purpose>
 Implement a story using parallel verification agents with Builder context reuse.
-Enhanced with playbook learning, code citation evidence, test quality validation, and automated coverage gates.
+Enhanced with playbook learning, code citation evidence, test quality validation, pragmatic triage, and automated coverage gates.
 Builder fixes issues in its own context (50-70% token savings).
 </purpose>
 
 <philosophy>
 **Quality Through Discipline, Continuous Learning**
 
-- Story Quality Gate: Fresh validation before committing resources
-- Playbook Query: Load relevant patterns before starting
-- Mason: Implements with playbook knowledge (context preserved)
-- Vera + Tessa + Rex: Validate in parallel with evidence
-- Coverage Gate: Automated threshold enforcement
-- Mason: Refines issues in same context (50-70% token savings)
-- Vera: Quick recheck
-- Orchestrator: Reconciles mechanically
-- Rita: Updates playbooks for future agents
+- Phase 1 PREPARE: Validate story quality, load playbooks
+- Phase 2 BUILD: Metis implements with TDD
+- Phase 3 VERIFY: Argus + Nemesis + reviewers validate in parallel
+- Phase 4 ASSESS: Coverage gate + Themis triages issues pragmatically
+- Phase 5 REFINE: Metis fixes real issues, iterate until clean
+- Phase 6 COMMIT: Reconcile story, update status
+- Phase 7 REFLECT: Mnemosyne updates playbooks for future
 
 Measure twice, cut once. Trust but verify. Evidence-based validation. Self-improving system.
 </philosophy>
+
+<agents>
+## The Greek Pantheon
+
+| Role | Name | Domain | Emoji |
+|------|------|--------|-------|
+| Builder | **Metis** | Goddess of wisdom, skill, and craft | 🔨 |
+| Inspector | **Argus** | The 100-eyed giant who sees everything | 👁️ |
+| Test Quality | **Nemesis** | Goddess of retribution and balance | 🧪 |
+| Security | **Cerberus** | Three-headed guardian of the underworld | 🔐 |
+| Logic/Perf | **Apollo** | God of reason, truth, and light | ⚡ |
+| Architecture | **Hestia** | Goddess of hearth, home, and structure | 🏛️ |
+| Quality | **Arete** | Personification of excellence | ✨ |
+| Arbiter | **Themis** | Titan of justice and fair judgment | ⚖️ |
+| Reflection | **Mnemosyne** | Titan of memory | 📚 |
+| Accessibility | **Iris** | Goddess of the rainbow, bridges realms | 🌈 |
+</agents>
 
 <execution_discipline>
 **CRITICAL: How This Workflow Executes**
@@ -35,60 +50,101 @@ It is invoked via `/bmad_bse_story-pipeline` (a Skill), NOT as a Task subagent.
 4. Task agents return artifacts; orchestrator continues with next phase
 
 **Task Agents Are ONLY Used For:**
-- Phase 1: `Task(subagent_type: "general-purpose")` → Mason (Builder)
-- Phase 2: `Task(subagent_type: ...)` → Vera (Inspector), Tessa (Test Quality), Rex (Reviewers) - in parallel
-- Phase 3: `Task(resume: builder_id)` → Mason fixes issues
-- Phase 4: `Task(subagent_type: ...)` → Vera re-check
-- Phase 6: `Task(subagent_type: ...)` → Rita (Reflection)
+- Phase 2 BUILD: `Task(subagent_type: "general-purpose")` → Metis (Builder)
+- Phase 3 VERIFY: `Task(subagent_type: ...)` → Argus + Nemesis + Cerberus/Apollo/Hestia/Arete - in parallel
+- Phase 4 ASSESS: `Task(subagent_type: ...)` → Themis (triage arbiter)
+- Phase 5 REFINE: Iterative loop:
+  - `Task(resume: builder_id)` → Metis fixes MUST_FIX
+  - `Task(resume: reviewer_id)` → Original reviewers verify their issues
+  - `Task(subagent_type: ...)` → Fresh eyes (iteration 2+)
+- Phase 7 REFLECT: `Task(subagent_type: ...)` → Mnemosyne (Reflection)
 
 **NEVER DO THIS:**
 - Spawn a `dev-typescript` or other Task agent to implement a story outside this workflow
 - Use Task tool to bypass the multi-agent verification structure
-- Let the orchestrator write implementation code directly (delegate to Mason)
+- Let the orchestrator write implementation code directly (delegate to Metis)
 
 **WHY:**
 Ad-hoc Task agents lack:
-- Playbook knowledge (Phase 0.5)
-- Independent verification (Phase 2)
-- Code citation evidence (Inspector)
-- Test quality validation (Tessa)
-- Security/architecture review (Rex)
-- Coverage gates (Phase 2.5)
+- Playbook knowledge (Phase 1)
+- Independent verification (Phase 3)
+- Issue classification (MUST_FIX/SHOULD_FIX/STYLE)
+- Pragmatic triage (Themis in Phase 4)
+- Code citation evidence (Argus)
+- Test quality validation (Nemesis)
+- Security/architecture review (Cerberus/Apollo/Hestia/Arete)
+- Coverage gates (Phase 4)
+- Iterative refinement until issues resolved (Phase 5)
 
 The workflow structure EXISTS to prevent bugs that slip through when a single agent implements and self-certifies.
 </execution_discipline>
 
 <config>
 name: story-pipeline
-version: 4.2.0
+version: 6.0.0
 execution_mode: multi_agent
 
 phases:
-  phase_0: Story Quality Gate (orchestrator validates story readiness)
-  phase_0.5: Playbook Query (orchestrator)
-  phase_1: Mason the Craftsman (saves agent_id)
-  phase_2: [Vera + Tessa + Rex reviewers] in parallel
-  phase_2.5: Coverage Gate (automated)
-  phase_3: Resume Mason with all findings (reuses context)
-  phase_4: Vera re-check (quick verification)
-  phase_5: Orchestrator reconciliation
-  phase_6: Rita reflection (playbook updates)
+  phase_1: PREPARE (story quality gate + playbook query)
+  phase_2: BUILD (Metis implements with TDD)
+  phase_3: VERIFY (Argus + Nemesis + reviewers in parallel)
+  phase_4: ASSESS (coverage gate + Themis triage)
+  phase_5: REFINE (Metis fixes + iterate until clean)
+  phase_6: COMMIT (reconcile story, update status)
+  phase_7: REFLECT (Mnemosyne updates playbooks)
 
-reviewer_counts:
-  micro: 2 reviewers (security, architect/integration)
-  standard: 3 reviewers (security, logic/performance, architect/integration)
-  complex: 4 reviewers (security, logic, architect/integration, code quality)
+issue_classification:
+  MUST_FIX: "Blocks completion - security, correctness, tests fail"
+  SHOULD_FIX: "Real issue but non-blocking - edge cases, minor bugs"
+  STYLE: "Preference only - naming, formatting, alternative approaches"
+
+complexity_scale:
+  # Scale from 1-6 verification agents based on story complexity
+  # Argus (Inspector) is ALWAYS included - he's the baseline
+
+  trivial:
+    total_agents: 1
+    agents: [Argus]
+    triggers: [static pages, copy changes, config updates, single-file changes]
+    skip_nemesis: true  # No test quality review needed for trivial
+
+  micro:
+    total_agents: 2
+    agents: [Argus, Hestia]
+    triggers: [1-2 tasks, no API calls, no user input, simple UI component]
+    skip_nemesis: true
+
+  light:
+    total_agents: 3
+    agents: [Argus, Nemesis, Hestia]
+    triggers: [3-4 tasks, basic CRUD, simple form, no auth]
+
+  standard:
+    total_agents: 4
+    agents: [Argus, Nemesis, Cerberus, Hestia]
+    triggers: [5-10 tasks, API integration, user input handling]
+
+  complex:
+    total_agents: 5
+    agents: [Argus, Nemesis, Cerberus, Apollo, Hestia]
+    triggers: [11-15 tasks, auth flows, payment adjacent, data migrations]
+
+  critical:
+    total_agents: 6
+    agents: [Argus, Nemesis, Cerberus, Apollo, Hestia, Arete]
+    triggers: [16+ tasks, security keywords, payment processing, encryption, PII]
 
 quality_gates:
   coverage_threshold: 80  # % line coverage required
-  task_verification: "all_with_evidence"  # Inspector must cite file:line
-  critical_issues: "must_fix"
-  high_issues: "must_fix"
+  task_verification: "all_with_evidence"  # Argus must cite file:line
+  must_fix_issues: "iterate_until_resolved"
+  max_iterations: 3
 
 token_efficiency:
-  - Phase 2 agents spawn in parallel (same cost, faster)
-  - Phase 3 resumes Builder (50-70% token savings vs fresh agent)
-  - Phase 4 Inspector only (no full re-review)
+  - Phase 3 agents spawn in parallel (same cost, faster)
+  - Phase 5 resumes Metis (50-70% token savings vs fresh agent)
+  - Phase 5 resumes ONLY reviewers who had MUST_FIX issues (targeted verification)
+  - Fresh eyes added only on iteration 2+ (avoids redundant full re-review)
 
 playbooks:
   enabled: true
@@ -103,187 +159,178 @@ playbooks:
 @patterns/agent-completion.md
 </execution_context>
 
+<orchestrator_narrative>
+## Orchestrator Checkpoint System
+
+Between each phase, the orchestrator outputs a brief narrative to keep the user informed.
+These are friendly status updates - not verbose, just enough to orient the user.
+
+**Example checkpoints:**
+- "Metis is building... this may take a few minutes."
+- "Good news - Metis finished! Now the reviewers will take a look."
+- "Themis has weighed the issues. 2 need fixing, 3 were gold-plating."
+- "All clear! Moving to commit the changes."
+
+**Implementation:** Orchestrator outputs these as regular text messages between Task spawns.
+</orchestrator_narrative>
+
 <process>
 
-<step name="load_story" priority="first">
-**Load and parse story file**
+<step name="phase_1_prepare">
+## Phase 1: PREPARE (1/7)
 
-\`\`\`bash
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📋 PHASE 1: PREPARE (1/7)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Story quality gate + Playbook query
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+### 1.1 Load and Parse Story
+
+```bash
 STORY_FILE="docs/sprint-artifacts/{{story_key}}.md"
 [ -f "$STORY_FILE" ] || { echo "ERROR: Story file not found"; exit 1; }
-\`\`\`
+```
 
 Use Read tool. Extract:
 - Task count
 - Acceptance criteria count
 - Keywords for risk scoring
 
-**Determine complexity:**
-\`\`\`bash
+### 1.2 Determine Complexity (6-tier scale)
+
+```bash
 TASK_COUNT=$(grep -c "^- \[ \]" "$STORY_FILE")
-RISK_KEYWORDS=$(grep -ciE "auth|security|payment|encryption|migration|database" "$STORY_FILE")
+CRITICAL_KEYWORDS=$(grep -ciE "payment|encryption|PII|credentials|secret" "$STORY_FILE")
+RISK_KEYWORDS=$(grep -ciE "auth|security|migration|database|API" "$STORY_FILE")
+TRIVIAL_KEYWORDS=$(grep -ciE "static|policy|content|copy|config|readme" "$STORY_FILE")
 
-if [ "$TASK_COUNT" -le 3 ] && [ "$RISK_KEYWORDS" -eq 0 ]; then
-  COMPLEXITY="micro"
-  REVIEWER_COUNT=2
-elif [ "$TASK_COUNT" -ge 16 ] || [ "$RISK_KEYWORDS" -gt 0 ]; then
-  COMPLEXITY="complex"
-  REVIEWER_COUNT=4
-else
-  COMPLEXITY="standard"
-  REVIEWER_COUNT=3
-fi
-\`\`\`
+# Check for trivial indicators
+HAS_API=$(grep -ciE "fetch|axios|API|endpoint|route\.ts" "$STORY_FILE")
+HAS_USER_INPUT=$(grep -ciE "form|input|onChange|submit" "$STORY_FILE")
+```
 
-Determine agents to spawn: Inspector + Test Quality + $REVIEWER_COUNT Reviewers
-</step>
+**Complexity decision tree:**
 
-<step name="story_quality_gate">
-**Phase 0: Story Quality Gate**
+```
+IF CRITICAL_KEYWORDS > 0 OR TASK_COUNT >= 16:
+  COMPLEXITY = "critical"
+  AGENTS = [Argus, Nemesis, Cerberus, Apollo, Hestia, Arete]  # 6 agents
 
-\`\`\`
+ELIF TASK_COUNT >= 11 OR (RISK_KEYWORDS > 0 AND TASK_COUNT >= 5):
+  COMPLEXITY = "complex"
+  AGENTS = [Argus, Nemesis, Cerberus, Apollo, Hestia]  # 5 agents
+
+ELIF TASK_COUNT >= 5 OR HAS_USER_INPUT > 0:
+  COMPLEXITY = "standard"
+  AGENTS = [Argus, Nemesis, Cerberus, Hestia]  # 4 agents
+
+ELIF TASK_COUNT >= 3 OR HAS_API > 0:
+  COMPLEXITY = "light"
+  AGENTS = [Argus, Nemesis, Hestia]  # 3 agents
+
+ELIF TASK_COUNT >= 2:
+  COMPLEXITY = "micro"
+  AGENTS = [Argus, Hestia]  # 2 agents
+
+ELSE (TASK_COUNT <= 1 OR TRIVIAL_KEYWORDS > 0):
+  COMPLEXITY = "trivial"
+  AGENTS = [Argus]  # 1 agent
+```
+
+**Display complexity:**
+```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🔍 PHASE 0: STORY QUALITY GATE
+📊 COMPLEXITY: {{COMPLEXITY}} ({{AGENT_COUNT}} agents)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Fresh validation before committing dev resources
+Tasks: {{TASK_COUNT}}
+Risk keywords: {{RISK_KEYWORDS}}
+Agents: {{AGENTS}}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-\`\`\`
+```
+
+### 1.3 Story Quality Gate
 
 **Orchestrator performs these checks directly (no Task spawn):**
 
-Read the story file with fresh eyes and validate:
-
 **1. Required Sections Exist:**
-\`\`\`bash
-# Check for essential story structure
+```bash
 grep -q "## Story Title\|## Story:" "$STORY_FILE" || echo "❌ MISSING: Story Title"
-grep -q "## Business Context\|## Context\|## Background" "$STORY_FILE" || echo "⚠️  MISSING: Business Context"
+grep -q "## Business Context\|## Context\|## Background" "$STORY_FILE" || echo "⚠️ MISSING: Business Context"
 grep -q "## Acceptance Criteria\|## AC\|## Definition of Done" "$STORY_FILE" || echo "❌ MISSING: Acceptance Criteria"
 grep -q "## Tasks\|## Implementation Tasks\|^- \[ \]" "$STORY_FILE" || echo "❌ MISSING: Tasks"
-\`\`\`
+```
 
-**2. Tasks Are Well-Defined (not placeholders):**
-\`\`\`bash
-# Check for placeholder tasks
+**2. Tasks Are Well-Defined:**
+```bash
 PLACEHOLDER_TASKS=$(grep -E "^\- \[ \] (TBD|TODO|WIP|Placeholder|...)" "$STORY_FILE" | wc -l)
 if [ "$PLACEHOLDER_TASKS" -gt 0 ]; then
   echo "❌ BLOCKER: $PLACEHOLDER_TASKS placeholder tasks found"
-  grep -E "^\- \[ \] (TBD|TODO|WIP|Placeholder|...)" "$STORY_FILE"
 fi
-
-# Check tasks have meaningful descriptions (> 10 chars)
-SHORT_TASKS=$(grep "^- \[ \]" "$STORY_FILE" | awk 'length($0) < 20' | wc -l)
-if [ "$SHORT_TASKS" -gt 0 ]; then
-  echo "⚠️  WARNING: $SHORT_TASKS tasks may be too brief"
-fi
-\`\`\`
+```
 
 **3. No Unresolved Blockers:**
-\`\`\`bash
-# Check for blocker markers
-BLOCKERS=$(grep -ciE "\[BLOCKER\]|\[BLOCKED\]|\[NEEDS.DECISION\]|\[NEEDS.CLARIFICATION\]|\[UNRESOLVED\]" "$STORY_FILE")
+```bash
+BLOCKERS=$(grep -ciE "\[BLOCKER\]|\[BLOCKED\]|\[NEEDS.DECISION\]" "$STORY_FILE")
 if [ "$BLOCKERS" -gt 0 ]; then
   echo "❌ BLOCKER: $BLOCKERS unresolved blockers found"
-  grep -iE "\[BLOCKER\]|\[BLOCKED\]|\[NEEDS.DECISION\]|\[NEEDS.CLARIFICATION\]|\[UNRESOLVED\]" "$STORY_FILE"
 fi
-\`\`\`
-
-**4. Acceptance Criteria Are Testable:**
-\`\`\`bash
-# Count acceptance criteria
-AC_COUNT=$(grep -cE "^\- \[ \].*should|^\- \[ \].*must|^\- \[ \].*can|^- Given.*When.*Then" "$STORY_FILE" || echo "0")
-if [ "$AC_COUNT" -eq 0 ]; then
-  echo "⚠️  WARNING: No testable acceptance criteria found (should/must/can/Given-When-Then)"
-fi
-\`\`\`
-
-**5. Gap Analysis Status (brownfield check):**
-\`\`\`bash
-# If story references existing code, check gap analysis was done
-if grep -q "existing\|modify\|update\|extend\|refactor" "$STORY_FILE"; then
-  if ! grep -q "Gap Analysis\|Codebase Analysis\|## Existing Code" "$STORY_FILE"; then
-    echo "⚠️  WARNING: Story references existing code but no gap analysis section found"
-  fi
-fi
-\`\`\`
+```
 
 **Quality Gate Decision:**
-\`\`\`
+```
 IF any ❌ BLOCKER found:
   → HALT pipeline
-  → Report issues to user
   → Suggest: "Run /bmad_bmm_validate to fix story issues"
 
 IF only ⚠️ WARNINGs found:
-  → Display warnings to user
   → ASK: "Proceed despite warnings? [y/N]"
-  → If user declines, halt pipeline
 
 IF all checks pass:
   → Display "✅ Story quality gate passed"
-  → Proceed to Phase 0.5 (Playbook Query)
-\`\`\`
-</step>
+```
 
-<step name="query_playbooks">
-**Phase 0.5: Playbook Query**
-
-\`\`\`
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📚 PHASE 0.5: PLAYBOOK QUERY
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-\`\`\`
-
-**Extract story keywords:**
-\`\`\`bash
-STORY_KEYWORDS=$(grep -E "^## Story Title|^### Feature|^## Business Context" "$STORY_FILE" | sed 's/[#]//g' | tr '\n' ' ')
-echo "Story keywords: $STORY_KEYWORDS"
-\`\`\`
+### 1.4 Playbook Query
 
 **Search for relevant playbooks:**
-Use Grep tool:
-- Pattern: extracted keywords
-- Path: \`docs/playbooks/implementation-playbooks/\`
-- Output mode: files_with_matches
-- Limit: 3 files
+```bash
+STORY_KEYWORDS=$(grep -E "^## Story Title|^### Feature" "$STORY_FILE" | sed 's/[#]//g' | tr '\n' ' ')
+```
 
-**Load matching playbooks:**
-For each playbook found:
-- Use Read tool
-- Extract sections: Common Gotchas, Code Patterns, Test Requirements
+Use Grep tool on `docs/playbooks/implementation-playbooks/` to find matching playbooks (max 3).
 
-If no playbooks exist:
-\`\`\`
-ℹ️  No playbooks found - this will be the first story to create them
-\`\`\`
+Store playbook content for Metis.
 
-Store playbook content for Builder.
+**📢 Orchestrator says:**
+> "Story looks good! Found {{playbook_count}} relevant playbooks. Now I'll hand off to **Metis** to build the implementation. She'll write tests first (TDD), then implement. This is usually the longest phase."
+
 </step>
 
-<step name="spawn_builder">
-**Phase 1: Builder Agent (Mason 🔨)**
+<step name="phase_2_build">
+## Phase 2: BUILD (2/7)
 
-\`\`\`
+```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🔨 PHASE 1: MASON THE CRAFTSMAN
+🔨 PHASE 2: BUILD (2/7)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-\`\`\`
+Metis implements with TDD
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
 
-**1. Load BMAD Agent Persona:**
-Read: \`{project-root}/_bmad/bse/agents/builder.md\`
-Extract the \`<persona>\` section - this defines WHO Mason is.
+**Load Metis persona:**
+Read: `{project-root}/_bmad/bse/agents/builder.md`
 
-**2. Spawn Builder agent and SAVE agent_id for resume later:**
+**Spawn Metis and SAVE agent_id:**
 
-⚠️ **This Task should be VISIBLE in Claude Code UI!**
-
-\`\`\`
+```
 BUILDER_TASK = Task({
   subagent_type: "general-purpose",
   model: "opus",
-  description: "🔨 Mason the Craftsman on {{story_key}}",
-  prompt: \`
-You are MASON 🔨 - The Craftsman.
+  description: "🔨 Metis building {{story_key}}",
+  prompt: `
+You are METIS 🔨 - Goddess of Wisdom, Skill, and Craft.
 
 <persona>
 [INJECT persona section from _bmad/bse/agents/builder.md]
@@ -300,805 +347,688 @@ You are implementing story {{story_key}}.
 Story: [inline story file content]
 
 {{IF playbooks loaded}}
-Relevant Playbooks (review before implementing):
+Relevant Playbooks:
 [inline playbook content]
-
-Pay special attention to:
-- Common Gotchas in these playbooks
-- Code Patterns to follow
-- Test Requirements to satisfy
 {{ENDIF}}
 </context>
 
 <objective>
-Implement the story requirements:
 1. Review story tasks and acceptance criteria
-2. **Review playbooks** for gotchas and patterns (if provided)
+2. Review playbooks for gotchas and patterns
 3. Analyze what exists vs needed (gap analysis)
-4. **Write tests FIRST** (TDD - tests before implementation)
+4. **Write tests FIRST** (TDD)
 5. Implement production code to pass tests
 </objective>
 
 <constraints>
-- Run tests and linting before finishing (take pride in your work!)
-- Self-review, but don't self-certify as "complete" (Inspector verifies)
+- Run tests and linting before finishing
 - DO NOT update story checkboxes (Orchestrator does this)
 - DO NOT commit changes yet (happens after review)
 </constraints>
 
-<success_criteria>
-- [ ] Reviewed playbooks for guidance
-- [ ] Tests written for all requirements
-- [ ] Production code implements tests
-- [ ] Tests pass
-- [ ] Return structured completion artifact
-</success_criteria>
-
 <completion_format>
-Return structured JSON artifact:
 {
-  "agent": "builder",
+  "agent": "metis",
   "story_key": "{{story_key}}",
   "status": "SUCCESS" | "FAILED",
-  "files_created": ["path/to/file.tsx", ...],
-  "files_modified": ["path/to/file.tsx", ...],
-  "tests_added": {
-    "total": 12,
-    "passing": 12
-  },
-  "tasks_addressed": ["task description from story", ...]
+  "files_created": [...],
+  "files_modified": [...],
+  "tests_added": { "total": 12, "passing": 12 }
 }
 
-Save to: docs/sprint-artifacts/completions/{{story_key}}-builder.json
+Save to: docs/sprint-artifacts/completions/{{story_key}}-metis.json
 </completion_format>
-\`
+`
 })
 
 BUILDER_AGENT_ID = {{extract agent_id from Task result}}
-\`\`\`
+```
 
-**CRITICAL: Store Builder agent ID:**
-\`\`\`bash
-echo "Builder agent ID: $BUILDER_AGENT_ID"
-echo "$BUILDER_AGENT_ID" > /tmp/builder-agent-id.txt
-\`\`\`
+**Store Metis agent ID for resume later.**
 
-**Wait for completion. Verify artifact exists:**
-\`\`\`bash
-BUILDER_COMPLETION="docs/sprint-artifacts/completions/{{story_key}}-builder.json"
-[ -f "$BUILDER_COMPLETION" ] || { echo "❌ No builder artifact"; exit 1; }
-\`\`\`
+**📢 Orchestrator says:**
+> "Metis has finished building! She created {{files_created}} files and {{tests_added}} tests. Now I'm sending in the review squad - **{{AGENT_COUNT}} agents** will verify the work in parallel. This goes fast since they run simultaneously."
 
-**Verify files exist:**
-\`\`\`bash
-# For each file in files_created and files_modified:
-[ -f "$file" ] || echo "❌ MISSING: $file"
-\`\`\`
-
-If files missing or status FAILED: halt pipeline.
 </step>
 
-<step name="spawn_verification_parallel">
-**Phase 2: Parallel Verification (Vera 🔍 + Tessa 🧪 + Rex 🔴)**
+<step name="phase_3_verify">
+## Phase 3: VERIFY (3/7)
 
-\`\`\`
+```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🔍 PHASE 2: PARALLEL VERIFICATION
+👁️ PHASE 3: VERIFY (3/7)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Spawning: Vera (Inspector) + Tessa (Test Quality) + {{REVIEWER_COUNT}} Rex clones (Reviewers)
-Total agents: {{2 + REVIEWER_COUNT}}
+Argus + Nemesis + reviewers in parallel
+Total agents: {{AGENT_COUNT}}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-\`\`\`
-
-**Load BMAD Agent Personas (before spawning):**
-- Read: \`{project-root}/_bmad/bse/agents/inspector.md\` → Extract \`<persona>\` for Vera
-- Read: \`{project-root}/_bmad/bse/agents/test-quality.md\` → Extract \`<persona>\` for Tessa
-- Read: \`{project-root}/_bmad/bse/agents/reviewer.md\` → Extract \`<persona>\` for Rex
+```
 
 **CRITICAL: Spawn ALL agents in ONE message (parallel execution)**
 
-Send single message with multiple Task calls:
-1. Vera 🔍 (Inspector)
-2. Tessa 🧪 (Test Quality)
-3. Rex 🔴 - Security focus
-4. Rex 🔴 - Logic/Performance focus (if standard/complex)
-5. Rex 🔴 - Architecture focus
-6. Rex 🔴 - Code Quality focus (if complex)
+### Argus 👁️ (Inspector) - ALWAYS SPAWN
 
----
-
-## Vera 🔍 (Inspector) Prompt:
-
-\`\`\`
+```
 Task({
   subagent_type: "testing-suite:test-engineer",
   model: "opus",
-  description: "🕵️ Vera the Inspector on {{story_key}}",
-  prompt: \`
-You are VERA 🔍 - The Verification Inspector.
+  description: "👁️ Argus inspecting {{story_key}}",
+  prompt: `
+You are ARGUS 👁️ - The 100-Eyed Giant.
 
-<persona>
-[INJECT persona section from _bmad/bse/agents/inspector.md]
-</persona>
-
-You are verifying story {{story_key}}.
-
-<execution_context>
-@patterns/verification.md
-@patterns/agent-completion.md
-</execution_context>
-
-<context>
-Story: [inline story file content]
-</context>
+You see EVERYTHING. Nothing escapes your gaze.
 
 <objective>
 Independently verify implementation WITH CODE CITATIONS:
-
 1. Read story file - understand ALL tasks
-2. Read each file Builder created/modified
+2. Read each file Metis created/modified
 3. **Map EACH task to specific code with file:line citations**
-4. Run verification checks:
-   - Type-check (0 errors required)
-   - Lint (0 warnings required)
-   - Tests (all passing required)
-   - Build (success required)
+4. Run verification checks (type-check, lint, tests, build)
 </objective>
 
 <critical_requirement>
 **EVERY task must have evidence.**
-
-For each task, provide:
-- file:line where it's implemented
-- Brief quote of relevant code
-- Verdict: IMPLEMENTED or NOT_IMPLEMENTED
-
-Example:
-Task: "Display occupant agreement status"
-Evidence: src/features/agreement/StatusBadge.tsx:45-67
-Code: "const StatusBadge = ({ status }) => ..."
-Verdict: IMPLEMENTED
+For each task, provide: file:line, code snippet, verdict.
 </critical_requirement>
 
-<constraints>
-- You have NO KNOWLEDGE of what Builder did
-- Run all checks yourself - don't trust claims
-- **Every task needs file:line citation**
-- If code doesn't exist: mark NOT IMPLEMENTED with reason
-</constraints>
+<issue_classification>
+For EACH issue you find, classify it:
+- MUST_FIX: Blocks completion (security, correctness, tests fail)
+- SHOULD_FIX: Real issue but non-blocking
+- STYLE: Preference only
+</issue_classification>
 
-<success_criteria>
-- [ ] ALL tasks mapped to code locations
-- [ ] Type check: 0 errors
-- [ ] Lint: 0 warnings
-- [ ] Tests: all passing
-- [ ] Build: success
-- [ ] Return structured evidence
-</success_criteria>
-
-<completion_format>
-{
-  "agent": "inspector",
-  "story_key": "{{story_key}}",
-  "verdict": "PASS" | "FAIL",
-  "task_verification": [
-    {
-      "task": "Create agreement view component",
-      "implemented": true,
-      "evidence": [
-        {
-          "file": "src/features/agreement/AgreementView.tsx",
-          "lines": "15-67",
-          "code_snippet": "export const AgreementView = ({ agreementId }) => {...}"
-        },
-        {
-          "file": "src/features/agreement/AgreementView.test.tsx",
-          "lines": "8-45",
-          "code_snippet": "describe('AgreementView', () => {...})"
-        }
-      ]
-    },
-    {
-      "task": "Add status badge",
-      "implemented": false,
-      "evidence": [],
-      "reason": "No StatusBadge component found in src/features/agreement/"
-    }
-  ],
-  "checks": {
-    "type_check": {"passed": true, "errors": 0},
-    "lint": {"passed": true, "warnings": 0},
-    "tests": {"passed": true, "total": 12, "passing": 12},
-    "build": {"passed": true}
-  }
-}
-
-Save to: docs/sprint-artifacts/completions/{{story_key}}-inspector.json
-</completion_format>
-\`
+Save to: docs/sprint-artifacts/completions/{{story_key}}-argus.json
+`
 })
-\`\`\`
+```
 
----
+### Nemesis 🧪 (Test Quality) - Skip for trivial/micro
 
-## Tessa 🧪 (Test Quality) Prompt:
-
-\`\`\`
+```
 Task({
   subagent_type: "testing-suite:test-engineer",
   model: "opus",
-  description: "🧪 Tessa the Test Scientist on {{story_key}}",
-  prompt: \`
-You are TESSA 🧪 - The Test Quality Analyst.
+  description: "🧪 Nemesis reviewing tests for {{story_key}}",
+  prompt: `
+You are NEMESIS 🧪 - Goddess of Retribution and Balance.
 
-<persona>
-[INJECT persona section from _bmad/bse/agents/test-quality.md]
-</persona>
-
-You are reviewing test quality for story {{story_key}}.
-
-<context>
-Story: [inline story file content]
-Builder completion: [inline builder artifact]
-</context>
+You find what's missing. You expose what's weak.
 
 <objective>
-Review test files for quality and completeness:
-
-1. Find all test files created/modified by Builder
-2. For each test file, verify:
-   - **Happy path**: Primary functionality tested ✓
-   - **Edge cases**: null, empty, invalid inputs ✓
-   - **Error conditions**: Failures handled properly ✓
-   - **Assertions**: Meaningful checks (not just "doesn't crash")
-   - **Test names**: Descriptive and clear
-   - **Deterministic**: No random data, no timing dependencies
-3. Check that tests actually validate the feature
-
-**Focus on:** What's missing? What edge cases weren't considered?
+Review test files for quality:
+- Happy path tested?
+- Edge cases (null, empty, invalid)?
+- Error conditions handled?
+- Assertions meaningful?
+- Tests deterministic?
 </objective>
 
-<success_criteria>
-- [ ] All test files reviewed
-- [ ] Edge cases identified (covered or missing)
-- [ ] Error conditions verified
-- [ ] Assertions are meaningful
-- [ ] Tests are deterministic
-- [ ] Return quality assessment
-</success_criteria>
+<issue_classification>
+Classify each issue: MUST_FIX / SHOULD_FIX / STYLE
+</issue_classification>
 
-<completion_format>
-{
-  "agent": "test_quality",
-  "story_key": "{{story_key}}",
-  "verdict": "PASS" | "NEEDS_IMPROVEMENT",
-  "test_files_reviewed": ["path/to/test.tsx", ...],
-  "issues": [
-    {
-      "severity": "HIGH",
-      "file": "path/to/test.tsx:45",
-      "issue": "Missing edge case: empty input array",
-      "recommendation": "Add test: expect(fn([])).toThrow(...)"
-    },
-    {
-      "severity": "MEDIUM",
-      "file": "path/to/test.tsx:67",
-      "issue": "Test uses Math.random() - could be flaky",
-      "recommendation": "Use fixed test data"
-    }
-  ],
-  "coverage_analysis": {
-    "edge_cases_covered": true | false,
-    "error_conditions_tested": true | false,
-    "meaningful_assertions": true | false,
-    "tests_are_deterministic": true | false
-  },
-  "summary": {
-    "high_issues": 1,
-    "medium_issues": 2,
-    "low_issues": 0
-  }
-}
-
-Save to: docs/sprint-artifacts/completions/{{story_key}}-test-quality.json
-</completion_format>
-\`
+Save to: docs/sprint-artifacts/completions/{{story_key}}-nemesis.json
+`
 })
-\`\`\`
+```
 
----
+### Cerberus 🔐 (Security) - standard+
 
-## Rex 🔴 Reviewers (Spawn based on complexity)
-
-Load Rex's persona from: `{project-root}/_bmad/bse/agents/reviewer.md`
-
-**Security Reviewer (always spawn):**
-\`\`\`
+```
 Task({
   subagent_type: "auditor-security",
   model: "opus",
-  description: "🔴 Sasha (Security) on {{story_key}}",
-  prompt: \`
-You are SASHA 🔴 - The Security Sentinel.
+  description: "🔐 Cerberus guarding {{story_key}}",
+  prompt: `
+You are CERBERUS 🔐 - The Three-Headed Guardian.
 
-<persona>
-[INJECT persona section from _bmad/bse/agents/reviewer.md]
-</persona>
+Nothing unsafe passes your gates.
 
 Focus: Security vulnerabilities, injection attacks, auth issues.
-[... security review prompt ...]
-\`
-})
-\`\`\`
 
-**Logic/Performance Reviewer (standard/complex):**
-\`\`\`
+<issue_classification>
+Classify each issue: MUST_FIX / SHOULD_FIX / STYLE
+Security issues are almost always MUST_FIX.
+</issue_classification>
+
+Save to: docs/sprint-artifacts/completions/{{story_key}}-cerberus.json
+`
+})
+```
+
+### Apollo ⚡ (Logic/Performance) - complex+
+
+```
 Task({
   subagent_type: "optimizer-performance",
   model: "opus",
-  description: "🔴 Leo (Logic) on {{story_key}}",
-  prompt: "... logic and performance review ..."
-})
-\`\`\`
+  description: "⚡ Apollo analyzing {{story_key}}",
+  prompt: `
+You are APOLLO ⚡ - God of Reason, Truth, and Light.
 
-**Architecture Reviewer (always spawn):**
-\`\`\`
+You illuminate logic flaws and performance issues.
+
+Focus: Logic bugs, edge cases, performance bottlenecks, algorithmic issues.
+
+<issue_classification>
+Classify each issue: MUST_FIX / SHOULD_FIX / STYLE
+</issue_classification>
+
+Save to: docs/sprint-artifacts/completions/{{story_key}}-apollo.json
+`
+})
+```
+
+### Hestia 🏛️ (Architecture) - micro+
+
+```
 Task({
   subagent_type: "architect-reviewer",
   model: "opus",
-  description: "🔴 Rosie (Architecture) on {{story_key}}",
-  prompt: "... architecture patterns review ..."
-})
-\`\`\`
+  description: "🏛️ Hestia reviewing architecture of {{story_key}}",
+  prompt: `
+You are HESTIA 🏛️ - Goddess of Hearth, Home, and Structure.
 
-**Code Quality Reviewer (complex only):**
-\`\`\`
+You ensure the foundation is solid.
+
+Focus: Patterns, integration, route structure, code organization.
+
+<issue_classification>
+Classify each issue: MUST_FIX / SHOULD_FIX / STYLE
+</issue_classification>
+
+Save to: docs/sprint-artifacts/completions/{{story_key}}-hestia.json
+`
+})
+```
+
+### Arete ✨ (Code Quality) - critical only
+
+```
 Task({
   subagent_type: "general-purpose",
   model: "opus",
-  description: "🔴 Quinn (Quality) on {{story_key}}",
-  prompt: "... code quality review ..."
+  description: "✨ Arete judging quality of {{story_key}}",
+  prompt: `
+You are ARETE ✨ - Personification of Excellence.
+
+You hold code to the highest standards.
+
+Focus: Maintainability, readability, best practices, code cleanliness.
+
+<issue_classification>
+Classify each issue: MUST_FIX / SHOULD_FIX / STYLE
+Be honest - not everything is MUST_FIX.
+</issue_classification>
+
+Save to: docs/sprint-artifacts/completions/{{story_key}}-arete.json
+`
 })
-\`\`\`
+```
 
 ---
 
 **Wait for ALL agents to complete.**
 
-Collect completion artifacts:
-- \`inspector.json\`
-- \`test-quality.json\`
-- \`reviewer-security.json\`
-- \`reviewer-logic.json\` (if spawned)
-- \`reviewer-architect.json\`
-- \`reviewer-quality.json\` (if spawned)
+Collect completion artifacts and store agent_ids for potential resume.
 
-Parse all findings and aggregate by severity.
+**📢 Orchestrator says:**
+> "All {{AGENT_COUNT}} reviewers are back! They found {{total_issues}} potential issues. Now **Themis** will weigh each one - she'll separate the real problems from the gold-plating."
+
 </step>
 
-<step name="coverage_gate">
-**Phase 2.5: Coverage Gate (Automated)**
+<step name="phase_4_assess">
+## Phase 4: ASSESS (4/7)
 
-\`\`\`
+```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📊 PHASE 2.5: COVERAGE GATE
+⚖️ PHASE 4: ASSESS (4/7)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-\`\`\`
+Coverage gate + Themis triage
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
 
-Run coverage check:
-\`\`\`bash
-# Run tests with coverage
+### 4.1 Coverage Gate
+
+```bash
 npm test -- --coverage --silent 2>&1 | tee coverage-output.txt
+COVERAGE=$(grep -E "All files|Statements" coverage-output.txt | head -1 | grep -oE "[0-9]+\.[0-9]+" | head -1)
 
-# Extract coverage percentage (adjust grep pattern for your test framework)
-COVERAGE=$(grep -E "All files|Statements" coverage-output.txt | head -1 | grep -oE "[0-9]+\.[0-9]+|[0-9]+" | head -1 || echo "0")
-
-echo "Coverage: ${COVERAGE}%"
-echo "Threshold: {{coverage_threshold}}%"
-
-# Compare coverage
 if (( $(echo "$COVERAGE < {{coverage_threshold}}" | bc -l) )); then
-  echo "❌ Coverage ${COVERAGE}% below threshold {{coverage_threshold}}%"
-  echo "Builder must add more tests before proceeding"
-  exit 1
+  echo "❌ Coverage ${COVERAGE}% below threshold"
+  # Add to MUST_FIX list
 fi
+```
 
-echo "✅ Coverage gate passed: ${COVERAGE}%"
-\`\`\`
+### 4.2 Themis Triage
 
-If coverage fails: add to issues list for Builder to fix.
-</step>
+**Purpose:** Reviewers can be overzealous. Themis applies a pragmatic filter.
 
-<step name="resume_builder_with_findings">
-**Phase 3: Resume Mason 🔨 with All Findings**
-
-\`\`\`
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🔨 PHASE 3: MASON REFINES THE WORK
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-\`\`\`
-
-**CRITICAL: Resume Mason (reuses context, 50-70% token savings!)**
-
-⚠️ **This Task should be VISIBLE in Claude Code UI!**
-
-\`\`\`
+```
 Task({
   subagent_type: "general-purpose",
   model: "opus",
-  description: "🔨 Mason refining {{story_key}}",
-  resume: "{{BUILDER_AGENT_ID}}",
-  prompt: \`
-Mason, the review team found some areas that need refinement.
+  description: "⚖️ Themis triaging issues for {{story_key}}",
+  prompt: `
+You are THEMIS ⚖️ - Titan of Justice and Fair Judgment.
 
-<issues_to_fix>
-[List all CRITICAL and HIGH issues with file:line citations]
-</issues_to_fix>
+You hold the scales. You decide what truly matters.
 
-<craftsman_principles>
-"A true craftsman takes feedback as an opportunity to improve the work."
-- Address issues in priority order (CRITICAL → HIGH → MEDIUM)
-- Run tests after each refinement to confirm resolution
-- Commit with descriptive message when done
-</craftsman_principles>
+<story_context>
+Complexity: {{COMPLEXITY}}
+Story type: {{story_type}}
+</story_context>
 
-<skip>
-- LOW priority items (gold-plating, can address later)
-</skip>
-\`\`\`
+<must_fix_issues>
+{{ALL MUST_FIX issues from Phase 3}}
+</must_fix_issues>
 
-Mason addresses the issues then returns:
-\`\`\`json
+<triage_instructions>
+For EACH MUST_FIX issue, render judgment:
+
+1. **UPHOLD** - Yes, this genuinely blocks completion. Metis must fix.
+2. **DOWNGRADE to SHOULD_FIX** - Real issue, but not blocking for this complexity. Log as tech debt.
+3. **DOWNGRADE to STYLE** - Reviewer being pedantic. This is gold-plating. Skip.
+
+Consider:
+- Is this issue proportionate to the story complexity?
+- Would a senior dev actually block a PR for this?
+- Is the reviewer applying "payment flow" rigor to a "static page"?
+
+**Security issues (from Cerberus) are almost always UPHOLD.**
+**Test failures are always UPHOLD.**
+**Broken functionality is always UPHOLD.**
+
+Examples of valid downgrades:
+- "Test doesn't validate exact content" on a static page → STYLE
+- "Missing edge case for empty array" when input is hardcoded → STYLE
+- "Should use within() for scoping" on a page with one section → SHOULD_FIX
+</triage_instructions>
+
+<completion_format>
 {
-  "agent": "builder_fixes",
-  "fixes_applied": [
-    {"issue": "SQL injection", "file": "api/route.ts:45", "fix": "Used parameterized query"},
-    ...
+  "triage": [
+    {
+      "issue": "original issue description",
+      "reviewer": "Nemesis",
+      "original_classification": "MUST_FIX",
+      "judgment": "DOWNGRADE",
+      "new_classification": "STYLE",
+      "justification": "Static page - shallow tests are appropriate"
+    }
   ],
-  "tests_passing": true,
-  "commit_hash": "abc123"
+  "summary": {
+    "upheld_must_fix": 2,
+    "downgraded_to_should_fix": 1,
+    "downgraded_to_style": 3
+  }
 }
-\`\`\`
 
-Wait for completion. Parse commit hash and fix counts.
-</step>
-
-<step name="inspector_recheck">
-**Phase 4: Vera 🕵️ Quick Re-Check**
-
-\`\`\`
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🕵️ PHASE 4: VERA RE-VERIFIES
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-\`\`\`
-
-⚠️ **This Task should be VISIBLE in Claude Code UI!**
-
-\`\`\`
-Task({
-  subagent_type: "testing-suite:test-engineer",
-  model: "opus",
-  description: "🕵️ Vera re-checking {{story_key}}",
-  prompt: \`
-You are VERA 🕵️ - Quick re-verification after Mason's refinements.
-
-Verify that:
-1. All CRITICAL/HIGH issues from Phase 2 are resolved
-2. Tests still pass
-3. No new issues introduced
-
-Return: PASS or FAIL with evidence.
-\`
+Save to: docs/sprint-artifacts/completions/{{story_key}}-themis.json
+</completion_format>
+`
 })
-\`\`\`
+```
 
-If FAIL: Resume Builder again with new issues.
-If PASS: Proceed to reconciliation.
+**Process triage results:**
+
+```
+IF upheld_must_fix == 0:
+  echo "✅ All issues triaged - proceeding to COMMIT"
+  SKIP_PHASE_5 = true
+ELSE:
+  echo "📋 {{upheld_must_fix}} issues remain - proceeding to REFINE"
+```
+
+**Display triage summary:**
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+⚖️ THEMIS JUDGMENT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Original MUST_FIX: {{original_count}}
+Judgment:
+  - UPHELD (must fix): {{upheld_must_fix}}
+  - Downgraded to SHOULD_FIX: {{downgraded_should_fix}}
+  - Downgraded to STYLE: {{downgraded_style}}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+**📢 Orchestrator says (if issues remain):**
+> "Themis has spoken. **{{upheld_must_fix}} issues** need to be fixed - these are real problems. {{downgraded_count}} were downgraded (we'll log them as tech debt but won't block on them). Sending Metis back in to fix the real issues."
+
+**📢 Orchestrator says (if no issues):**
+> "Excellent! Themis cleared all the issues - the reviewers were being a bit picky. We can skip the fix phase and move straight to committing."
+
 </step>
 
-<step name="reconcile_story">
-**Phase 5: Orchestrator Reconciliation**
+<step name="phase_5_refine">
+## Phase 5: REFINE (5/7)
 
-\`\`\`
+```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📊 PHASE 5: RECONCILIATION (Orchestrator)
+🔧 PHASE 5: REFINE (5/7)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-\`\`\`
+Metis fixes + iterate until clean (max 3)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
 
-**YOU (orchestrator) do this directly. No agent spawn.**
+**Skip if Themis cleared all issues.**
 
-**5.1: Load completion artifacts**
-\`\`\`bash
-BUILDER_FIXES="docs/sprint-artifacts/completions/{{story_key}}-builder-fixes.json"
-INSPECTOR="docs/sprint-artifacts/completions/{{story_key}}-inspector.json"
-\`\`\`
+### Iterative Refinement Loop
 
-Use Read tool on all artifacts.
+```
+┌─────────────────────────────────────────────────────────┐
+│  Iterative Refinement Loop                              │
+├─────────────────────────────────────────────────────────┤
+│                                                         │
+│  ┌──────────┐    ┌──────────────┐    ┌──────────────┐  │
+│  │ Metis    │───▶│ Resume       │───▶│ MUST_FIX     │  │
+│  │ fixes    │    │ original     │    │ remaining?   │  │
+│  │ MUST_FIX │    │ reviewers    │    └──────┬───────┘  │
+│  └──────────┘    └──────────────┘           │          │
+│       ▲                                     │          │
+│       │          YES ◀──────────────────────┤          │
+│       └─────────────────────────────────────┘          │
+│                                             │ NO       │
+│                                             ▼          │
+│                                      ✅ Complete       │
+│                                                         │
+│  Max iterations: 3                                      │
+│  After 3: Escalate to user                              │
+└─────────────────────────────────────────────────────────┘
+```
 
-**5.2: Read story file**
-Use Read tool: \`docs/sprint-artifacts/{{story_key}}.md\`
+**WHILE MUST_FIX_COUNT > 0 AND ITERATION <= 3:**
 
-**5.3: Check off completed tasks using Inspector evidence**
+### 5.1 Resume Metis with MUST_FIX issues
 
-For each task in \`inspector.task_verification\`:
-- If \`implemented: true\` and has evidence:
-  - Use Edit tool: \`"- [ ] {{task}}"\` → \`"- [x] {{task}}"\`
+```
+Task({
+  subagent_type: "general-purpose",
+  model: "opus",
+  description: "🔨 Metis fixing issues (iteration {{ITERATION}}) on {{story_key}}",
+  resume: "{{BUILDER_AGENT_ID}}",
+  prompt: `
+Metis, Themis has upheld these issues as MUST_FIX:
 
-**5.4: Fill Dev Agent Record with evidence**
+<must_fix_issues>
+{{upheld issues with file:line citations}}
+</must_fix_issues>
 
-Use Edit tool:
-\`\`\`text
+Fix them. Run tests after each fix.
+`
+})
+```
+
+### 5.2 Resume original reviewers to verify
+
+Only resume reviewers who had upheld MUST_FIX findings.
+
+```
+FOR EACH reviewer_id IN reviewers_with_upheld_must_fix:
+  Task({
+    resume: "{{reviewer_id}}",
+    prompt: `
+Metis has addressed your issues. Verify:
+1. Is the fix satisfactory? (RESOLVED / NOT_RESOLVED)
+2. Did the fix introduce NEW issues?
+`
+  })
+```
+
+### 5.3 Fresh eyes on iteration 2+
+
+On iteration 2+, add ONE fresh reviewer (possibly Iris if frontend files).
+
+**END WHILE**
+
+**Post-loop:**
+- If max iterations reached, escalate to user
+- Log SHOULD_FIX and STYLE as tech debt
+
+**📢 Orchestrator says (after successful fix):**
+> "Metis fixed the issues and the reviewers confirmed the fixes look good. **Zero MUST_FIX remaining!** Now I'll reconcile the story file and commit everything."
+
+**📢 Orchestrator says (if max iterations reached):**
+> "We've gone through {{max_iterations}} fix cycles and there are still {{remaining}} issues. I'll need your input on whether to proceed anyway or address these manually."
+
+</step>
+
+<step name="phase_6_commit">
+## Phase 6: COMMIT (6/7)
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📝 PHASE 6: COMMIT (6/7)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Reconcile story, update status
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+**Orchestrator does this directly. No agent spawn.**
+
+### 6.1 Load completion artifacts
+
+Read all artifacts from `docs/sprint-artifacts/completions/{{story_key}}-*.json`
+
+### 6.2 Check off completed tasks using Argus evidence
+
+For each task in `argus.task_verification`:
+- If `implemented: true` with evidence:
+  - Use Edit tool: `"- [ ] {{task}}"` → `"- [x] {{task}}"`
+
+### 6.3 Fill Dev Agent Record
+
+```text
 **Dev Agent Record**
 **Implementation Date:** {{timestamp}}
-**Agent Model:** Claude Sonnet 4.5 (multi-agent pipeline v4.0)
+**Agent Model:** Claude (Greek Pantheon Pipeline v6.0)
 **Git Commit:** {{git_commit}}
 
 **Pipeline Phases:**
-- Phase 0: Playbook Query ({{playbooks_loaded}} loaded)
-- Phase 1: Builder (initial implementation)
-- Phase 2: Parallel Verification
-  - Inspector: {{verdict}} with code citations
-  - Test Quality: {{verdict}}
-  - {{REVIEWER_COUNT}} Reviewers: {{issues_found}}
-- Phase 2.5: Coverage Gate ({{coverage}}%)
-- Phase 3: Builder (resumed, fixed {{fixes_count}} issues)
-- Phase 4: Inspector re-check ({{verdict}})
+- Phase 1 PREPARE: {{playbooks_loaded}} playbooks loaded
+- Phase 2 BUILD: Metis implemented
+- Phase 3 VERIFY: {{AGENT_COUNT}} agents in parallel
+- Phase 4 ASSESS: Themis triaged ({{upheld}}/{{original}} upheld)
+- Phase 5 REFINE: {{iterations}} iterations, {{fixes}} fixes
+- Phase 6 COMMIT: Reconciled
+- Phase 7 REFLECT: Pending
 
-**Files Created:** {{count}}
-**Files Modified:** {{count}}
-**Tests:** {{tests.passing}}/{{tests.total}} passing ({{coverage}}%)
-**Issues Fixed:** {{critical}} CRITICAL, {{high}} HIGH, {{medium}} MEDIUM
+**Files:** {{files_created + files_modified}}
+**Tests:** {{passing}}/{{total}} ({{coverage}}%)
+```
 
-**Task Evidence:** (Inspector code citations)
-{{for each task with evidence}}
-- [x] {{task}}
-  - {{evidence[0].file}}:{{evidence[0].lines}}
-{{endfor}}
-\`\`\`
+### 6.4 Update sprint-status.yaml
 
-**5.5: Verify updates**
-\`\`\`bash
-CHECKED=$(grep -c "^- \[x\]" docs/sprint-artifacts/{{story_key}}.md)
-[ "$CHECKED" -gt 0 ] || { echo "❌ Zero tasks checked"; exit 1; }
-echo "✅ Reconciled: $CHECKED tasks with evidence"
-\`\`\`
-</step>
+```bash
+# Edit: "{{story_key}}: ready-for-dev" → "{{story_key}}: done"
+```
 
-<step name="final_verification">
-**Final Quality Gate**
+### 6.5 Commit reconciliation
 
-\`\`\`bash
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "🔍 FINAL VERIFICATION"
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-
-# 1. Git commit exists
-git log --oneline -3 | grep "{{story_key}}" || { echo "❌ No commit"; exit 1; }
-echo "✅ Git commit found"
-
-# 2. Story tasks checked with evidence
-CHECKED=$(grep -c "^- \[x\]" docs/sprint-artifacts/{{story_key}}.md)
-[ "$CHECKED" -gt 0 ] || { echo "❌ No tasks checked"; exit 1; }
-echo "✅ $CHECKED tasks checked with code citations"
-
-# 3. Dev Agent Record filled
-grep -A 5 "### Dev Agent Record" docs/sprint-artifacts/{{story_key}}.md | grep -q "202" || { echo "❌ Record not filled"; exit 1; }
-echo "✅ Dev Agent Record filled"
-
-# 4. Coverage met threshold
-FINAL_COVERAGE=$(jq -r '.tests.coverage' docs/sprint-artifacts/completions/{{story_key}}-builder-fixes.json)
-if (( $(echo "$FINAL_COVERAGE < {{coverage_threshold}}" | bc -l) )); then
-  echo "❌ Coverage ${FINAL_COVERAGE}% still below threshold"
-  exit 1
-fi
-echo "✅ Coverage: ${FINAL_COVERAGE}%"
-
-echo ""
-echo "✅ STORY COMPLETE"
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-\`\`\`
-
-**Update sprint-status.yaml:**
-Use Edit tool: \`"{{story_key}}: ready-for-dev"\` → \`"{{story_key}}: done"\`
-
-**Commit validated changes:**
-\`\`\`bash
-# Stage story file and sprint status updates
+```bash
 git add docs/sprint-artifacts/{{story_key}}.md
 git add docs/sprint-artifacts/sprint-status.yaml
 git add docs/sprint-artifacts/completions/
 
-# Create reconciliation commit
 git commit -m "$(cat <<'EOF'
 chore({{story_key}}): reconcile story completion
 
 - Check off completed tasks with code citations
 - Fill Dev Agent Record with pipeline results
 - Update sprint-status to done
-- Archive completion artifacts
 EOF
 )"
+```
 
-echo "✅ Reconciliation committed"
-\`\`\`
+**📢 Orchestrator says:**
+> "Story reconciled and committed! One last step - **Mnemosyne** will review what happened and update the playbooks so future stories benefit from what we learned."
 
-**Verify commit:**
-\`\`\`bash
-git log --oneline -1 | grep -q "reconcile" || { echo "❌ Reconciliation commit failed"; exit 1; }
-echo "✅ Reconciliation commit verified"
-\`\`\`
 </step>
 
-<step name="playbook_reflection">
-**Phase 6: Playbook Reflection**
+<step name="phase_7_reflect">
+## Phase 7: REFLECT (7/7)
 
-\`\`\`
+```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-💡 PHASE 6: PLAYBOOK REFLECTION
+📚 PHASE 7: REFLECT (7/7)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-\`\`\`
+Mnemosyne updates playbooks
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
 
-Spawn Reflection Agent:
-
-\`\`\`
+```
 Task({
   subagent_type: "general-purpose",
   model: "opus",
-  description: "📚 Rita the Librarian reflecting on {{story_key}}",
-  prompt: \`
-You are the REFLECTION agent for story {{story_key}}.
+  description: "📚 Mnemosyne reflecting on {{story_key}}",
+  prompt: `
+You are MNEMOSYNE 📚 - Titan of Memory.
+
+**Philosophy:** Consolidate, don't scatter. One good playbook beats five scattered ones.
 
 <context>
 Story: [inline story file]
-Builder initial: [inline builder.json]
-All review findings: [inline all reviewer artifacts]
-Builder fixes: [inline builder-fixes.json]
-Test quality issues: [inline test-quality.json]
+All review findings: [inline all artifacts]
+Themis judgments: [inline triage]
 </context>
 
-<objective>
-Identify what future agents should know:
+<process>
+**Step 1: Extract learnings**
+- What issues were found?
+- What did Metis miss initially?
+- What would have prevented these?
 
-1. **What issues were found?** (from reviewers)
-2. **What did Builder miss initially?** (gaps, edge cases, security)
-3. **What playbook knowledge would have prevented these?**
-4. **Which module/feature area does this apply to?**
-5. **Should we update existing playbook or create new?**
+**Step 2: SEARCH existing playbooks first**
+\`\`\`bash
+ls docs/playbooks/implementation-playbooks/
+grep -r "{{keyword}}" docs/playbooks/implementation-playbooks/
+\`\`\`
 
-Questions:
-- What gotchas should future builders know?
-- What code patterns should be standard?
-- What test requirements are essential?
-- What similar stories exist?
-</objective>
+**Step 3: Decide action**
+| Situation | Action |
+|-----------|--------|
+| Existing playbook covers this | **UPDATE** it |
+| Related playbook exists | **UPDATE** with new section |
+| Truly new domain | **CREATE** new (rare) |
+| No real learnings | **SKIP** |
 
-<success_criteria>
-- [ ] Analyzed review findings
-- [ ] Identified preventable issues
-- [ ] Determined which playbook(s) to update
-- [ ] Return structured proposal
-</success_criteria>
+**Step 4: WRITE the changes**
+- If updating: Read existing, use Edit tool to add sections
+- If creating: Use Write tool (only if truly new domain)
+- Always update "Last updated" and "Related Stories"
+</process>
+
+<critical>
+- SEARCH FIRST - don't create duplicates
+- PREFER UPDATE over CREATE
+- ACTUALLY WRITE - don't just propose
+- SKIP if trivial - don't create noise
+</critical>
 
 <completion_format>
 {
-  "agent": "reflection",
-  "story_key": "{{story_key}}",
-  "learnings": [
-    {
-      "issue": "SQL injection in query builder",
-      "root_cause": "Builder used string concatenation (didn't know pattern)",
-      "prevention": "Playbook should document: always use parameterized queries",
-      "applies_to": "database queries, API endpoints with user input"
-    },
-    {
-      "issue": "Missing edge case tests for empty arrays",
-      "root_cause": "Test Quality Agent found gap",
-      "prevention": "Playbook should require: test null/empty/invalid for all inputs",
-      "applies_to": "all data processing functions"
-    }
-  ],
-  "playbook_proposal": {
-    "action": "update_existing" | "create_new",
-    "playbook": "docs/playbooks/implementation-playbooks/database-api-patterns.md",
-    "module": "api/database",
-    "updates": {
-      "common_gotchas": [
-        "Never concatenate user input into SQL - use parameterized queries",
-        "Test edge cases: null, undefined, [], '', invalid input"
-      ],
-      "code_patterns": [
-        "db.query(sql, [param1, param2]) ✓",
-        "sql + userInput ✗"
-      ],
-      "test_requirements": [
-        "Test SQL injection attempts: expect(query(\"' OR 1=1--\")).toThrow()",
-        "Test empty inputs: expect(fn([])).toHandle() or .toThrow()"
-      ],
-      "related_stories": ["{{story_key}}"]
-    }
+  "learnings": [...],
+  "playbook_action": {
+    "action": "updated" | "created" | "skipped",
+    "path": "docs/playbooks/implementation-playbooks/{{name}}.md",
+    "reason": "Why this action"
   }
 }
 
-Save to: docs/sprint-artifacts/completions/{{story_key}}-reflection.json
+Save to: docs/sprint-artifacts/completions/{{story_key}}-mnemosyne.json
 </completion_format>
-\`
+`
 })
-\`\`\`
+```
 
-**Wait for completion.**
+**📢 Orchestrator says (completion):**
+> "**Story {{story_key}} complete!** 🎉
+>
+> Here's the summary:
+> - **Built:** {{files_created}} files, {{tests_added}} tests
+> - **Reviewed by:** {{AGENT_COUNT}} agents
+> - **Issues found:** {{total_issues}} → **{{upheld_must_fix}} fixed**, {{downgraded_count}} logged as tech debt
+> - **Coverage:** {{coverage}}%
+> - **Commits:** Implementation + Reconciliation
+> - **Playbook:** {{playbook_status}} (Mnemosyne)"
 
-**Review playbook proposal:**
-\`\`\`bash
-REFLECTION="docs/sprint-artifacts/completions/{{story_key}}-reflection.json"
-ACTION=$(jq -r '.playbook_proposal.action' "$REFLECTION")
-PLAYBOOK=$(jq -r '.playbook_proposal.playbook' "$REFLECTION")
-
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "📝 Playbook Update Proposal"
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "Action: $ACTION"
-echo "Playbook: $PLAYBOOK"
-echo ""
-jq -r '.learnings[] | "- \(.issue)\n  Prevention: \(.prevention)"' "$REFLECTION"
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-\`\`\`
-
-If \`auto_apply_updates: true\` in config:
-- Read playbook (or create from template if new)
-- Use Edit tool to add learnings to sections
-- Commit playbook update
-
-If \`auto_apply_updates: false\` (default):
-- Display proposal for manual review
-- User can apply later with \`/update-playbooks {{story_key}}\`
 </step>
 
 </process>
 
 <failure_handling>
-**Builder fails (Phase 1):** Don't spawn verification. Report failure and halt.
-**Inspector fails (Phase 2):** Still collect other reviewer findings.
-**Test Quality fails:** Add issues to Builder fix list.
-**Coverage below threshold:** Add to Builder fix list.
-**Reviewers find CRITICAL:** Builder MUST fix when resumed.
-**Inspector fails (Phase 4):** Resume Builder again (iterative loop, max 3 iterations).
-**Builder resume fails:** Report unfixed issues. Manual intervention.
-**Reconciliation fails:** Fix with Edit tool, re-verify.
+**Metis fails (Phase 2):** Don't spawn verification. Report failure and halt.
+**Argus fails (Phase 3):** Still collect other reviewer findings.
+**Nemesis fails (Phase 3):** Add test quality issues to fix list.
+**Coverage below threshold (Phase 4):** Add to MUST_FIX list.
+**Themis upholds MUST_FIX (Phase 4):** Enter refinement loop (Phase 5).
+**Iteration limit reached (Phase 5):** Escalate to user with remaining issues.
+**Metis resume fails (Phase 5):** Report unfixed issues. Manual intervention.
+**Reconciliation fails (Phase 6):** Fix with Edit tool, re-verify.
 </failure_handling>
 
 <complexity_routing>
-| Complexity | Phase 2 Agents | Total | Security |
-|------------|----------------|-------|----------|
-| micro | Inspector + Test Quality + 2 Reviewers | 4 agents | Security Reviewer + Architect |
-| standard | Inspector + Test Quality + 3 Reviewers | 5 agents | Security + Logic + Architect |
-| complex | Inspector + Test Quality + 4 Reviewers | 6 agents | Security + Logic + Architect + Quality |
+| Complexity | Agents | Who | Triggers |
+|------------|--------|-----|----------|
+| trivial | 1 | Argus | Static pages, copy, config, 1 task |
+| micro | 2 | Argus + Hestia | 2 tasks, no API, no user input |
+| light | 3 | Argus + Nemesis + Hestia | 3-4 tasks, basic CRUD |
+| standard | 4 | Argus + Nemesis + Cerberus + Hestia | 5-10 tasks, API, user input |
+| complex | 5 | Argus + Nemesis + Cerberus + Apollo + Hestia | 11-15 tasks, auth, migrations |
+| critical | 6 | Argus + Nemesis + Cerberus + Apollo + Hestia + Arete | 16+ tasks, payment, encryption, PII |
 
-**All verification agents spawn in parallel (single message)**
+**Agent roles:**
+- **Argus** 👁️ (Inspector) - Always present. Verifies tasks with code citations.
+- **Nemesis** 🧪 (Test Quality) - Reviews test coverage and quality. Skipped for trivial/micro.
+- **Cerberus** 🔐 (Security) - Security vulnerabilities, injection, auth issues.
+- **Apollo** ⚡ (Logic/Performance) - Logic bugs, performance issues, edge cases.
+- **Hestia** 🏛️ (Architecture) - Patterns, integration, route structure.
+- **Arete** ✨ (Code Quality) - Maintainability, readability, best practices.
+- **Themis** ⚖️ (Arbiter) - Triages issues with pragmatic judgment.
+- **Mnemosyne** 📚 (Reflection) - Updates playbooks for future.
+- **Iris** 🌈 (Accessibility) - WCAG, ARIA, a11y (conditional, frontend only).
+
+**All Phase 3 agents spawn in parallel (single message)**
 </complexity_routing>
 
 <success_criteria>
-- [ ] Phase 0: Playbooks loaded (if available)
-- [ ] Phase 1: Builder spawned, agent_id saved
-- [ ] Phase 2: All verification agents completed in parallel
-- [ ] Phase 2.5: Coverage gate passed
-- [ ] Phase 3: Builder resumed with consolidated findings
-- [ ] Phase 4: Inspector recheck passed
-- [ ] Phase 5: Orchestrator reconciled with Inspector evidence
-- [ ] Phase 6: Playbook reflection completed
-- [ ] Implementation commit exists (from Phase 3)
-- [ ] Reconciliation commit exists (from Phase 5)
-- [ ] Story tasks checked with code citations
-- [ ] Dev Agent Record filled
+- [ ] Phase 1 PREPARE: Story validated, playbooks loaded
+- [ ] Phase 2 BUILD: Metis spawned, agent_id saved
+- [ ] Phase 3 VERIFY: All agents completed with issue classification
+- [ ] Phase 4 ASSESS: Coverage passed, Themis triaged issues
+- [ ] Phase 5 REFINE: Zero MUST_FIX remaining (or user accepted)
+- [ ] Phase 6 COMMIT: Story reconciled, sprint status updated
+- [ ] Phase 7 REFLECT: Mnemosyne proposed playbook updates
+- [ ] Implementation commit exists
+- [ ] Reconciliation commit exists
 - [ ] Coverage ≥ {{coverage_threshold}}%
-- [ ] Sprint status: done
+- [ ] SHOULD_FIX/STYLE logged as tech debt (if any)
 </success_criteria>
 
-<improvements_v4>
-1. ✅ Resume Builder for fixes (v3.2+) - 50-70% token savings
-2. ✅ Inspector provides code citations (v4.0) - file:line evidence for every task
-3. ✅ Removed "hospital-grade" framing (v4.0) - kept disciplined gates
-4. ✅ Micro stories get 2 reviewers + security scan (v3.2+) - not zero
-5. ✅ Test Quality Agent (v4.0) + Coverage Gate (v4.0) - validates test quality and enforces threshold
-6. ✅ Playbook query (v4.0) before Builder + reflection (v4.0) after - continuous learning
-7. ✅ Reconciliation commit (v4.2) - commits story file updates after validation
-</improvements_v4>
+<version_history>
+**v6.0 - Greek Pantheon Edition**
+1. ✅ Renamed all agents to Greek mythology (Metis, Argus, Nemesis, etc.)
+2. ✅ Restructured to 7 named phases (PREPARE, BUILD, VERIFY, ASSESS, REFINE, COMMIT, REFLECT)
+3. ✅ Added Themis as independent triage arbiter (not the builder)
+4. ✅ Phase numbers now show progress (3/7)
+
+**v5.1 - Pragmatic Issue Triage + 6-Tier Complexity**
+- 6-Tier Complexity Scale (trivial → critical)
+- Issue Triage phase
+- Context-aware filtering
+
+**v5.0 - Iterative Refinement Loop**
+- Issue Classification (MUST_FIX/SHOULD_FIX/STYLE)
+- Iterative loop until zero MUST_FIX
+- Resume original reviewers
+- Fresh eyes on iteration 2+
+- User escalation after 3 iterations
+- Tech debt logging
+
+**Previous:**
+- Resume Builder for fixes (v3.2+)
+- Inspector code citations (v4.0)
+- Test Quality + Coverage Gate (v4.0)
+- Playbook query + reflection (v4.0)
+</version_history>
