@@ -8,9 +8,71 @@ This module extends the BMad Method with advanced implementation workflows that 
 
 - **Multi-Agent Pipelines**: The Greek Pantheon - Metis (Builder) → Argus (Inspector) → Nemesis (Test Quality) → Reviewers → Themis (Arbiter) → Mnemosyne (Reflection)
 - **Gap Analysis**: Validate story tasks against actual codebase implementation
-- **Batch Processing**: Process multiple stories with complexity-based routing
+- **Batch Processing**: Process multiple stories with smart dependency ordering
 - **Playbook Learning**: Extract patterns from implementations for future agents
 - **Quality Gates**: Enforce test coverage thresholds and code citation requirements
+
+## What's New in v6.0
+
+### Greek Pantheon Edition
+All agents renamed with Greek mythology identities for memorable, distinct personalities.
+
+### 7 Named Phases
+Clean phase structure with progress indicators (1/7, 2/7, etc.):
+- PREPARE → BUILD → VERIFY → ASSESS → REFINE → COMMIT → REFLECT
+
+### Themis Quick-Fix Rule
+The arbiter now errs on the side of fixing rather than filtering:
+- **Any issue < 2 minutes to fix = MUST_FIX** (no debate)
+- Expected distribution: 60-80% MUST_FIX, 10-30% SHOULD_FIX, 5-15% STYLE
+- *"If it takes 30 seconds to fix, just fix it."*
+
+### Smart Dependency Ordering (Parallel Waves)
+When running stories in parallel, the engine analyzes dependencies and builds smart waves:
+
+```
+Stories selected: 5-1, 5-2, 5-3, 5-4, 5-5, 5-6
+
+Wave 1 (no dependencies):
+  • 5-1 Polish Catch List View
+  • 5-3 Polish Manual Catch Entry Form
+
+Wave 2 (depends on Wave 1):
+  • 5-2 Polish Catch Detail View (← 5-1)
+  • 5-4 Fix Offline Photo Handling (← 5-1)
+
+Wave 3 (depends on Wave 2):
+  • 5-5 Improve Photo Upload Widget (← 5-4)
+  • 5-6 Add Catch Edit Functionality (← 5-2)
+```
+
+**Dependency detection:**
+1. Explicit `depends_on` field in story files
+2. File-based inference (cross-referencing created/used files)
+3. Keyword scanning for story references
+4. Epic ordering fallback (lower numbers first)
+
+### Progress Artifacts & Wave Summaries
+Each pipeline writes progress at every phase, enabling detailed wave summaries:
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🌊 WAVE 1 COMPLETE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+| Story | Status | Tests | Coverage | Issues | Commit |
+|-------|--------|-------|----------|--------|--------|
+| 5-1 | ✅ done | 25 | 97.6% | 4→0 | 8a1a0f0 |
+| 5-2 | ✅ done | 22 | 100% | 2→0 | 481c7fd |
+| 5-3 | ✅ done | 32 | 89.2% | 6→0 | e94460c |
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Wave Summary: 3/3 succeeded
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+### Playbook Consolidation
+Mnemosyne now searches existing playbooks before creating new ones - consolidating knowledge rather than scattering it across many files.
 
 ## Installation
 
@@ -50,8 +112,8 @@ modules:
 
 | Workflow | Phase | Description |
 |----------|-------|-------------|
-| `story-pipeline` | Execution | Multi-agent TDD pipeline with 6 specialized agents |
-| `batch-stories` | Orchestration | Process multiple stories with complexity routing |
+| `story-pipeline` | Execution | Multi-agent TDD pipeline with 7 phases and specialized agents |
+| `batch-stories` | Orchestration | Process multiple stories with smart dependency ordering |
 | `gap-analysis` | Preparation | Validate story tasks against actual codebase (pre-dev) |
 | `create-story-with-gap-analysis` | Preparation | Story creation with systematic codebase analysis |
 | `validate` | Verification | Post-dev verification with quick/deep modes |
@@ -77,7 +139,7 @@ modules:
 │  ─────────────        ─────────           ───────────           │
 │                                                                  │
 │  batch-stories        multi-agent-        detect-ghost-         │
-│  (runs multiple)      review              features              │
+│  (smart waves)        review              features              │
 │                                                                  │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -91,8 +153,8 @@ modules:
 | `builder` | **Metis** 🔨 | Goddess of Wisdom & Craft | TDD Implementation Specialist - "With the wisdom of the Titans" |
 | `inspector` | **Argus** 👁️ | The All-Seeing Giant | Independent verification with code citations - "With a hundred eyes" |
 | `test-quality` | **Nemesis** 🧪 | Goddess of Retribution & Balance | Test quality analyst - "Justice demands tests that assert the truth" |
-| `arbiter` | **Themis** ⚖️ | Titan of Justice | Triages feedback into MUST_FIX / SHOULD_FIX / STYLE |
-| `reflection` | **Mnemosyne** 📚 | Titan of Memory | Knowledge curator - "What is written in memory endures forever" |
+| `arbiter` | **Themis** ⚖️ | Titan of Justice | Triages feedback - Quick fixes = MUST_FIX, filters only the truly pointless |
+| `reflection` | **Mnemosyne** 📚 | Titan of Memory | Knowledge curator - Consolidates playbooks, doesn't scatter |
 
 ### Reviewer Squad
 
@@ -133,13 +195,13 @@ git diff --name-only | grep -E "\.(tsx|jsx|vue|css|scss|html)$|components/|pages
 │           STORY PIPELINE v6.0 - GREEK PANTHEON               │
 ├─────────────────────────────────────────────────────────────┤
 │                                                              │
-│  Phase 1: PREPARE ─────────────────────────────────────────│
+│  Phase 1: PREPARE (1/7) ─────────────────────────────────── │
 │     Story quality gate + playbook query                     │
 │                                                              │
-│  Phase 2: BUILD ───────────────────────────────────────────│
+│  Phase 2: BUILD (2/7) ───────────────────────────────────── │
 │     🔨 Metis implements with TDD                            │
 │                                                              │
-│  Phase 3: VERIFY ──────────────────────────────────────────│
+│  Phase 3: VERIFY (3/7) ──────────────────────────────────── │
 │     👁️ Argus (Inspector)     ┐                              │
 │     🧪 Nemesis (Test Quality) ├─ Run in parallel            │
 │     🔐 Cerberus (Security)    │                              │
@@ -148,21 +210,48 @@ git diff --name-only | grep -E "\.(tsx|jsx|vue|css|scss|html)$|components/|pages
 │     ✨ Arete (Quality)        │                              │
 │     🌈 Iris (Accessibility)  ┘                              │
 │                                                              │
-│  Phase 4: ASSESS ──────────────────────────────────────────│
+│  Phase 4: ASSESS (4/7) ──────────────────────────────────── │
 │     Coverage gate + ⚖️ Themis triages issues                │
-│     (MUST_FIX / SHOULD_FIX / STYLE)                         │
+│     Quick Fix Rule: < 2 min = MUST_FIX                      │
 │                                                              │
-│  Phase 5: REFINE ──────────────────────────────────────────│
+│  Phase 5: REFINE (5/7) ──────────────────────────────────── │
 │     🔨 Metis fixes MUST_FIX issues                          │
 │     Loop until clean (max 3 iterations)                     │
 │                                                              │
-│  Phase 6: COMMIT ──────────────────────────────────────────│
+│  Phase 6: COMMIT (6/7) ──────────────────────────────────── │
 │     Reconcile story, update sprint status                   │
 │                                                              │
-│  Phase 7: REFLECT ─────────────────────────────────────────│
-│     📚 Mnemosyne updates playbooks                          │
+│  Phase 7: REFLECT (7/7) ─────────────────────────────────── │
+│     📚 Mnemosyne updates playbooks (consolidates, not scatters) │
 │                                                              │
 └─────────────────────────────────────────────────────────────┘
+```
+
+## Batch Processing
+
+### Execution Modes
+
+| Mode | Description | Best For |
+|------|-------------|----------|
+| **Sequential** | Process one-by-one, visible agent phases | Gap analysis, debugging |
+| **Parallel** | Smart waves with dependency ordering | Greenfield batch, speed |
+
+### Parallel Configuration
+
+```yaml
+parallel_config:
+  max_concurrent: 3          # Stories per wave (configurable)
+  smart_ordering: true       # Analyze dependencies automatically
+  respect_epic_order: true   # Lower story numbers first
+```
+
+### Story Dependencies
+
+Stories can declare dependencies for smart wave ordering:
+
+```markdown
+## Dependencies
+depends_on: [5-1, 5-2]
 ```
 
 ## Configuration
@@ -177,20 +266,35 @@ The module adds these configuration options during installation:
 | `require_code_citations` | `true` | Inspector must provide file:line evidence |
 | `auto_fix_critical_issues` | `true` | Builder resumes to fix critical/high issues |
 
+## Issue Classification
+
+Themis triages reviewer findings with the **Quick Fix Rule**:
+
+| Classification | Meaning | When Used |
+|----------------|---------|-----------|
+| **MUST_FIX** | Fix now | Quick fixes (< 2 min) OR real issues (security, bugs, broken tests) |
+| **SHOULD_FIX** | Tech debt | Significant effort (10+ min) AND debatable value |
+| **STYLE** | Ignore | Truly pointless - bikeshedding, preference only (rare!) |
+
+**Expected distribution:** 60-80% MUST_FIX, 10-30% SHOULD_FIX, 5-15% STYLE
+
 ## Complexity Routing
 
 The batch processor routes stories based on complexity:
 
 | Level | Criteria | Pipeline |
 |-------|----------|----------|
-| **Micro** | ≤3 tasks, ≤5 files, no risk keywords | Lightweight path |
-| **Standard** | ≤15 tasks, ≤30 files | Full pipeline |
-| **Complex** | >15 tasks, security/auth/payment keywords | Enhanced validation |
+| **Trivial** | 1 task, static content | Argus only |
+| **Micro** | ≤2 tasks, no API | Lightweight (2 reviewers) |
+| **Light** | ≤4 tasks, basic CRUD | 3 reviewers |
+| **Standard** | ≤10 tasks, API integration | Full pipeline (4 reviewers) |
+| **Complex** | ≤15 tasks, auth/migration | Enhanced (5 reviewers) |
+| **Critical** | 16+ tasks, payment/encryption/PII | All reviewers (6) |
 
 Risk keywords that increase complexity:
-- **High**: auth, security, payment, encryption, migration, database, schema
+- **Critical**: payment, encryption, PII, credentials, secret
+- **High**: auth, security, migration, database, schema
 - **Medium**: api, integration, external, third-party, cache
-- **Low**: ui, style, config, docs, test
 
 ## Dependencies
 
