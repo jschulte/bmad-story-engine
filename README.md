@@ -3,7 +3,7 @@
 **Author:** Jonah Schulte (leveraging BMAD Method)
 **Version:** 6.1 (Token Optimization Edition)
 
-A multi-agent orchestration system that delivers **10-20x faster development** with **hospital-grade quality** through systematic automation of code review, testing, and verification.
+A multi-agent orchestration system that delivers **10-20x faster development** with **production-grade quality** through systematic automation of code review, testing, and verification.
 
 ---
 
@@ -46,7 +46,7 @@ Total: 2-3 days                       ↓
 ```
 
 **Speed multiplier:** 10-20x faster
-**Quality improvement:** Hospital-grade verification (80%+ coverage, multi-perspective review)
+**Quality improvement:** Rigorous verification (80%+ coverage, multi-perspective review)
 **Knowledge retention:** Playbook system ensures team learns from every story
 
 ---
