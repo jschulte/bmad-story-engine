@@ -90,3 +90,61 @@ What changes per platform:
 - How agents are spawned (Task tool vs Skills vs instructions)
 - Whether parallel execution is automatic or manual
 - Whether agent context can be resumed
+
+## Available Workflows
+
+### Story Pipeline (`/story-pipeline`, `/batch-stories`)
+
+Implements new user stories with multi-agent review.
+
+| Platform | Command |
+|----------|---------|
+| Claude Code | `/story-pipeline story_key=17-1` |
+| OpenCode | `@bse-orchestrator "Implement STORY-001"` |
+| Copilot | `@workspace /bse-pipeline Implement STORY-001` |
+| Codex | `Implement STORY-001 using BMAD pipeline` |
+
+### Batch Review (`/batch-review`)
+
+Deep hardening sweeps on existing code. Run repeatedly until bulletproof.
+
+| Platform | Command |
+|----------|---------|
+| Claude Code | `/batch-review epic=17 focus="security"` |
+| OpenCode | `@bse-batch-review "Harden epic=17 focus=security"` |
+| Copilot | `@workspace /batch-review epic=17 focus="security"` |
+| Codex | `batch-review epic=17 focus="security"` |
+
+**Focus Examples:**
+```
+focus="security vulnerabilities, auth bypass"
+focus="styling, UX, button placement"
+focus="accessibility, WCAG AA"
+focus="N+1 queries, performance"
+focus="error handling consistency"
+```
+
+## Adapters by Platform
+
+### Claude Code (Native)
+- Uses built-in Task tool with specialized subagent_types
+- Full parallel execution
+- Agent resumption supported
+
+### OpenCode
+Files in `.opencode/agents/`:
+- `bse-orchestrator.md` - Story pipeline orchestrator
+- `bse-batch-review.md` - Batch review orchestrator
+- `bse-builder.md`, `bse-inspector.md`, etc. - Specialized agents
+- `bse-deep-reviewer.md`, `bse-issue-fixer.md` - Hardening agents
+
+### GitHub Copilot
+Skills in `.github/skills/`:
+- `bse-pipeline/` - Story pipeline skill
+- `bse-batch-review/` - Batch review skill
+- `bse-security/`, `bse-inspector/`, etc. - Specialized skills
+
+### Codex CLI
+Instructions in `.codex/`:
+- `bse-pipeline.md` - Story pipeline instructions
+- `bse-batch-review.md` - Batch review instructions

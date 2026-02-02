@@ -137,8 +137,11 @@ EOF
     echo ""
     echo "Usage:"
     echo "  1. Start OpenCode: opencode"
-    echo "  2. Switch to orchestrator: Tab (or @bse-orchestrator)"
-    echo "  3. Invoke pipeline: 'Implement STORY-001 using BMAD pipeline'"
+    echo "  2. Switch to agent: Tab (or @bse-orchestrator, @bse-batch-review)"
+    echo ""
+    echo "Commands:"
+    echo "  Story Pipeline:  'Implement STORY-001 using BMAD pipeline'"
+    echo "  Batch Review:    'Harden epic=17 focus=\"security\"'"
     ;;
 
   copilot)
@@ -183,8 +186,11 @@ EOF
     echo ""
     echo "Usage:"
     echo "  1. Skills are auto-loaded when relevant"
-    echo "  2. In Copilot CLI: 'Implement STORY-001 using BMAD pipeline'"
-    echo "  3. Skills work in VS Code agent mode too"
+    echo "  2. Skills work in VS Code agent mode too"
+    echo ""
+    echo "Commands:"
+    echo "  Story Pipeline:  '@workspace /bse-pipeline Implement STORY-001'"
+    echo "  Batch Review:    '@workspace /batch-review epic=17 focus=\"security\"'"
     ;;
 
   codex)
