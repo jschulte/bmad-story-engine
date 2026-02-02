@@ -1,10 +1,10 @@
 # Story Pipeline v6.1 - Token Optimization Edition
 
-Enhanced multi-agent pipeline featuring the Greek Pantheon: Metis (builder), Argus (inspector), Nemesis (test quality), specialized reviewers (Cerberus, Apollo, Hestia, Arete, Iris), Themis (arbiter for triage), and Mnemosyne-Hermes (reflection + reporting).
+Enhanced multi-agent pipeline featuring the Greek Pantheon: Metis (builder), Argus (inspector), Nemesis (test quality), specialized reviewers (Cerberus, Apollo, Hestia, Arete, Iris), Themis (arbiter for triage), and Hermes (reflection + reporting).
 
 ## What's New in v6.1
 
-### 1. Combined Mnemosyne-Hermes Agent
+### 1. Combined Hermes Agent
 **Token Savings: ~5-8K per story**
 
 - Phase 7 now uses a single combined agent for reflection AND reporting
@@ -101,7 +101,7 @@ Phase 6: COMMIT ─────────────────────�
          Orchestrator reconciliation (evidence-based)
          ↓
 Phase 7: REFLECT ──────────────────────────────────────
-         📚📜 Mnemosyne-Hermes: playbooks + report
+         📜 Hermes: playbooks + report
 ```
 
 ## 6-Tier Complexity Routing
@@ -127,7 +127,7 @@ Phase 7: REFLECT ─────────────────────
 - **Phase 2:** Agents spawn in parallel (same cost, faster)
 - **Phase 3:** Consolidated Multi-Reviewer for trivial→standard (60-70% savings)
 - **Phase 5:** Resumes Builder (50-70% token savings vs fresh agent)
-- **Phase 7:** Combined Mnemosyne-Hermes (5-8K savings per story)
+- **Phase 7:** Combined Hermes (5-8K savings per story)
 
 ## Playbook Configuration
 
@@ -163,7 +163,7 @@ The workflow uses agents for **verification parallelism**, not **implementation 
 - `agents/test-quality.md` - **Nemesis** 🧪 - Test quality validation
 - `agents/arbiter.md` - **Themis** ⚖️ - Issue triage (MUST_FIX/SHOULD_FIX/STYLE)
 - `agents/fixer.md` - **Metis** 🔨 (resumed) - Issue resolution
-- `agents/reflection-reporter.md` - **Mnemosyne-Hermes** 📚📜 - Combined reflection + reporting (v6.1)
+- `agents/reflection-reporter.md` - **Hermes** 📜 - Combined reflection + reporting (v6.1)
 - `agents/reflection.md` - **Mnemosyne** 📚 - Playbook learning (deprecated, use reflection-reporter)
 
 **Reviewer Squad:**

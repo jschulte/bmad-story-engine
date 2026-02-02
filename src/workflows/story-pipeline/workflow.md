@@ -1180,7 +1180,7 @@ Update `docs/sprint-artifacts/completions/{{story_key}}-progress.json`:
 ```
 
 **📢 Orchestrator says:**
-> "Story reconciled and committed! One last step - **Mnemosyne-Hermes** will review what happened, update playbooks, and generate the completion report."
+> "Story reconciled and committed! One last step - **Hermes** will review what happened, update playbooks, and generate the completion report."
 
 </step>
 
@@ -1189,9 +1189,9 @@ Update `docs/sprint-artifacts/completions/{{story_key}}-progress.json`:
 
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📚📜 PHASE 7: REFLECT (7/7)
+📜 PHASE 7: REFLECT (7/7)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Mnemosyne-Hermes: Reflection + Report
+Hermes: Reflection + Report
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
@@ -1199,15 +1199,15 @@ Mnemosyne-Hermes: Reflection + Report
 
 **Why combined?** Both Mnemosyne (reflection) and Hermes (reporting) read the same artifacts. Combining them saves ~5-8K tokens per story while producing identical outputs.
 
-**Spawn Mnemosyne-Hermes (Combined Agent):**
+**Spawn Hermes (Combined Agent):**
 
 ```
 Task({
   subagent_type: "general-purpose",
   model: "sonnet",  # Faster model sufficient for synthesis
-  description: "📚📜 Mnemosyne-Hermes: reflect + report {{story_key}}",
+  description: "📜 Hermes: reflect + report {{story_key}}",
   prompt: `
-You are MNEMOSYNE-HERMES 📚📜 - Memory & Messenger Combined.
+You are MNEMOSYNE-HERMES 📜 - Memory & Messenger Combined.
 
 Perform TWO roles in sequence for {{story_key}}:
 
@@ -1384,7 +1384,7 @@ Update `docs/sprint-artifacts/completions/{{story_key}}-progress.json`:
 - **Arete** ✨ (Code Quality) - Maintainability, readability, best practices.
 - **Multi-Reviewer** 👁️🧪🔐🏛️ (Consolidated) - All 4 perspectives in one pass. Token-efficient.
 - **Themis** ⚖️ (Arbiter) - Triages issues with pragmatic judgment.
-- **Mnemosyne-Hermes** 📚📜 (Reflect+Report) - Updates playbooks AND generates completion report.
+- **Hermes** 📜 (Reflect+Report) - Updates playbooks AND generates completion report.
 - **Iris** 🌈 (Accessibility) - WCAG, ARIA, a11y (conditional, frontend only).
 </complexity_routing>
 
@@ -1395,7 +1395,7 @@ Update `docs/sprint-artifacts/completions/{{story_key}}-progress.json`:
 - [ ] Phase 4 ASSESS: Coverage passed, Themis triaged issues
 - [ ] Phase 5 REFINE: Zero MUST_FIX remaining (or user accepted)
 - [ ] Phase 6 COMMIT: Story reconciled, sprint status updated
-- [ ] Phase 7 REFLECT: Mnemosyne-Hermes generated playbook updates + completion report
+- [ ] Phase 7 REFLECT: Hermes generated playbook updates + completion report
 - [ ] Implementation commit exists
 - [ ] Reconciliation commit exists
 - [ ] Coverage ≥ {{coverage_threshold}}%
@@ -1404,7 +1404,7 @@ Update `docs/sprint-artifacts/completions/{{story_key}}-progress.json`:
 
 <version_history>
 **v6.1 - Token Optimization Edition**
-1. ✅ Combined Mnemosyne + Hermes into Mnemosyne-Hermes (saves ~5-8K tokens/story)
+1. ✅ Combined Mnemosyne + Hermes into Hermes (saves ~5-8K tokens/story)
 2. ✅ Added Multi-Reviewer consolidated agent (saves ~60-70% Phase 3 tokens)
 3. ✅ Complexity-based review mode routing (consolidated for trivial→standard, parallel for complex+)
 4. ✅ Both optimizations maintain quality while reducing token overhead

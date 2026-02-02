@@ -55,7 +55,7 @@ Total: 2-3 days                       ↓
 
 ### 1. Token Optimization (~35K tokens saved per story)
 
-**Combined Mnemosyne-Hermes Agent** (~5-8K savings)
+**Combined Hermes Agent** (~5-8K savings)
 - Phase 7 now uses single agent for reflection + reporting
 - Eliminates duplicate artifact loading
 
@@ -330,7 +330,7 @@ SCOPE → REVIEW → ASSESS → FIX → VERIFY → REPORT
 | **Argus** 👁️ | Inspector | Verifies ALL tasks with file:line evidence |
 | **Nemesis** 🧪 | Test Quality | Ensures tests are meaningful, not just coverage |
 | **Themis** ⚖️ | Arbiter | Triages issues - real problems get fixed |
-| **Mnemosyne-Hermes** 📚📜 | Reflection+Report | Captures learnings + generates summaries |
+| **Hermes** 📜 | Reflection+Report | Captures learnings + generates summaries |
 
 ### Reviewer Squad
 
@@ -522,7 +522,7 @@ Phase 6: COMMIT ─────────────────────�
          Git commit with citations
          ↓
 Phase 7: REFLECT ──────────────────────────────────────
-         📚📜 Mnemosyne-Hermes combined:
+         📜 Hermes combined:
          - Updates playbooks with learnings
          - Generates completion report with TL;DR
 ```
@@ -661,7 +661,7 @@ bmad-story-engine/
 │   │   │   └── agents/                 # Pipeline-specific agents
 │   │   │       ├── builder.md          # Metis persona
 │   │   │       ├── multi-reviewer.md   # Consolidated reviewer
-│   │   │       ├── reflection-reporter.md  # Combined Mnemosyne-Hermes
+│   │   │       ├── reflection-reporter.md  # Combined Hermes
 │   │   │       └── ...
 │   │   ├── batch-stories/              # Batch orchestration
 │   │   │   └── agents/
@@ -712,7 +712,7 @@ bse:
 
   # Token optimization
   use_consolidated_review: "auto" # auto = based on complexity
-  use_combined_reporter: true     # Mnemosyne-Hermes combined
+  use_combined_reporter: true     # Hermes combined
 ```
 
 ---

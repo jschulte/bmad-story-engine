@@ -240,7 +240,7 @@ agents:
     steps: [10, 11]
     subagent_type: "general-purpose"
     model: "sonnet" # Faster model sufficient for synthesis
-    prompt_file: "{agents_path}/reflection-reporter.md" # Mnemosyne-Hermes combined
+    prompt_file: "{agents_path}/reflection-reporter.md" # Hermes combined
     timeout: 900 # 15 minutes
     outputs:
       - "{sprint_artifacts}/completions/{{story_key}}-mnemosyne.json"
