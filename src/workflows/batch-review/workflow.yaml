@@ -1,0 +1,137 @@
+name: batch-review
+description: "Deep code review and hardening workflow - run repeatedly until bulletproof"
+author: "Jonah Schulte (leveraging BMAD Method)"
+version: "1.0.0"
+
+# ============================================================================
+# BATCH-REVIEW: Hardening Sweep Workflow
+# ============================================================================
+# Purpose: Deep dive into existing code to find and fix issues that may have
+# been missed during initial implementation. Run repeatedly until clean.
+#
+# Key Differences from story-pipeline:
+# - No BUILD phase (code already exists)
+# - Focus on REVIEW → ASSESS → FIX → VERIFY cycles
+# - Supports user focus prompts for targeted review
+# - Designed to be run multiple times
+#
+# Usage:
+#   /batch-review epic=17
+#   /batch-review epic=17 focus="styling, UX, button placement"
+#   /batch-review stories="17-1,17-2,17-3" focus="security vulnerabilities"
+#   /batch-review path="src/components" focus="accessibility compliance"
+# ============================================================================
+
+# Execution parameters
+execution_mode: "multi_agent"
+max_iterations: 5  # Max fix/verify cycles per run
+
+# Paths
+installed_path: "{project-root}/_bmad/bse/workflows/batch-review"
+instructions: "{installed_path}/workflow.md"
+agents_path: "{installed_path}/agents"
+
+# Scope options (one of these is required)
+scope:
+  # Option 1: Review stories from an epic
+  epic: null  # e.g., "17" - reviews all stories in epic 17
+
+  # Option 2: Specific stories
+  stories: null  # e.g., "17-1,17-2,17-3"
+
+  # Option 3: Direct paths
+  paths: null  # e.g., "src/components,src/api"
+
+  # Option 4: Git diff based
+  since_commit: null  # e.g., "abc123" - review all changes since commit
+
+# Review focus (optional - enhances default review)
+focus:
+  enabled: false
+  prompt: null  # User-provided focus guidance
+  # Examples:
+  # - "styling, UX, button placement, context menu usage"
+  # - "security vulnerabilities and auth bypass"
+  # - "error handling consistency"
+  # - "accessibility compliance (WCAG AA)"
+  # - "performance bottlenecks and N+1 queries"
+  # - "test coverage gaps"
+
+# Default review perspectives (always included)
+default_perspectives:
+  - security       # Cerberus - vulnerabilities, injection, auth
+  - correctness    # Apollo - logic bugs, edge cases
+  - architecture   # Hestia - patterns, integration
+  - test_quality   # Nemesis - test gaps, coverage
+
+# Additional perspectives (auto-included based on files)
+conditional_perspectives:
+  accessibility:
+    trigger_files: ["*.tsx", "*.jsx", "*.vue", "components/**"]
+  performance:
+    trigger_files: ["api/**", "services/**", "lib/**"]
+
+# Agents
+agents:
+  scope_analyzer:
+    description: "Analyzes scope and identifies files to review"
+    subagent_type: "general-purpose"
+    model: "sonnet"  # Fast analysis
+    prompt_file: "{agents_path}/scope-analyzer.md"
+    timeout: 300
+
+  deep_reviewer:
+    description: "Deep multi-perspective code review with optional focus"
+    subagent_type: "architect-reviewer"  # Best for comprehensive review
+    model: "opus"
+    prompt_file: "{agents_path}/deep-reviewer.md"
+    timeout: 2400  # 40 min for thorough review
+
+  targeted_reviewer:
+    description: "Focused review based on user guidance"
+    subagent_type: "general-purpose"
+    model: "opus"
+    prompt_file: "{agents_path}/targeted-reviewer.md"
+    timeout: 1800
+
+  issue_fixer:
+    description: "Fixes identified issues"
+    subagent_type_routing:  # Smart routing based on file type
+      frontend: "dev-frontend"
+      backend: "dev-typescript"
+      database: "database-administrator"
+      general: "general-purpose"
+    model: "opus"
+    prompt_file: "{agents_path}/issue-fixer.md"
+    timeout: 2400
+
+  verification_reviewer:
+    description: "Verifies fixes and checks for regressions"
+    subagent_type: "testing-suite:test-engineer"
+    model: "opus"
+    prompt_file: "{agents_path}/verification-reviewer.md"
+    timeout: 1200
+
+  hardening_reporter:
+    description: "Generates summary of hardening pass"
+    subagent_type: "general-purpose"
+    model: "sonnet"
+    prompt_file: "{agents_path}/hardening-reporter.md"
+    timeout: 600
+
+# Issue classification (same as story-pipeline)
+issue_classification:
+  MUST_FIX: "Real issues that need fixing"
+  SHOULD_FIX: "Large refactors, log as tech debt"
+  STYLE: "Manufactured complaints only"
+
+# Output
+output:
+  findings_file: "{sprint_artifacts}/hardening/{{scope_id}}-findings.json"
+  report_file: "{sprint_artifacts}/hardening/{{scope_id}}-report.md"
+  history_file: "{sprint_artifacts}/hardening/{{scope_id}}-history.json"
+
+# Completion criteria
+completion:
+  clean_pass: true  # Stop when no MUST_FIX issues found
+  max_passes: 5     # Safety limit

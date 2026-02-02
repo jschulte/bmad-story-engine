@@ -1,7 +1,7 @@
 name: story-pipeline
 description: "Enhanced multi-agent pipeline with smart builder spawning, playbook learning, code citation evidence, test quality validation, resume-builder fixes, and per-story completion reports"
-author: "BMAD Method"
-version: "5.0.0" # Added smart builder spawning from agent-routing.yaml
+author: "Jonah Schulte (leveraging BMAD Method)"
+version: "5.1.0" # Hybrid agent mapping - Claude Code specialized agents + BSE personas
 
 # ============================================================================
 # CRITICAL: EXECUTION DISCIPLINE
@@ -86,76 +86,94 @@ audit_trail: "{sprint_artifacts}/audit-story-pipeline-{{story_id}}-{{date}}.yaml
 
 # Multi-agent configuration
 agents:
+  # ==========================================================================
+  # HYBRID AGENT MAPPING (v5.1)
+  # Strategy: Use Claude Code's specialized agents + layer BSE persona on top
+  # See agent-type-mapping.md for full documentation
+  # ==========================================================================
+
   builder:
     description: "Implementation agent - writes code and tests (SMART SPAWNING)"
     steps: [1, 2, 3, 4]
-    subagent_type: "general-purpose"  # Always general-purpose, specialized via prompt
     model: "opus"  # Builder gets full capability model
-    # NOTE: bmad_agent is DYNAMICALLY SELECTED based on agent-routing.yaml rules
-    # The workflow.md Phase 2 (BUILD) will:
-    #   1. Load agent-routing.yaml
-    #   2. Analyze story for file patterns and keywords
-    #   3. Match against builder_routing rules (first match wins)
-    #   4. Load the matched specialized builder prompt
-    #   5. Spawn with specialized instructions
+    # HYBRID: subagent_type is DYNAMICALLY SELECTED based on story content
+    # React/Next.js → dev-frontend + frontend-react.md
+    # TypeScript API → dev-typescript + backend-typescript.md
+    # Python → dev-python + backend-python.md
+    # Go → dev-go + backend-go.md
+    # Database → database-administrator + database-prisma.md
+    # Infrastructure → engineer-deployment + infrastructure.md
+    # General → general-purpose + general.md
+    subagent_type_routing:
+      frontend-react: "dev-frontend"
+      frontend-vue: "dev-frontend"
+      backend-typescript: "dev-typescript"
+      backend-python: "dev-python"
+      backend-go: "dev-go"
+      database-prisma: "database-administrator"
+      database-sql: "database-administrator"
+      infrastructure: "engineer-deployment"
+      general: "general-purpose"
+    fallback_subagent: "general-purpose"
     smart_spawn: true
     routing_config: "{agent_routing.config_file}"
-    fallback_agent: "agents/builders/general.md"  # Metis if no rules match
-    prompt_file: "{agents_path}/builder.md"  # Legacy fallback only
-    trust_level: "low" # Assumes agent will cut corners
-    timeout: 3600 # 1 hour
+    fallback_agent: "agents/builders/general.md"
+    prompt_file: "{agents_path}/builder.md"
+    trust_level: "low"
+    timeout: 3600
 
   inspector:
     description: "Validation agent - independent verification with code citations"
     steps: [5, 6]
-    subagent_type: "general-purpose"  # Self-contained, no external plugin dependency
+    subagent_type: "general-purpose"  # No specialized inspector in Claude Code
     model: "opus"
-    bmad_agent: "{validators_path}/inspector.md"  # Vera - The Verification Inspector
+    bmad_agent: "{validators_path}/inspector.md"  # Argus - The All-Seeing
     prompt_file: "{agents_path}/inspector.md"
-    fresh_context: true # No knowledge of builder agent
-    trust_level: "medium" # No conflict of interest
-    timeout: 1800 # 30 minutes
-    require_code_citations: true # v4.0: Must provide file:line evidence for all tasks
+    fresh_context: true
+    trust_level: "medium"
+    timeout: 1800
+    require_code_citations: true
 
   test_quality:
     description: "Test quality validation - verifies test coverage and quality"
     steps: [5.5]
-    subagent_type: "general-purpose"  # Self-contained, no external plugin dependency
+    subagent_type: "testing-suite:test-engineer"  # HYBRID: Claude Code test expertise
     model: "opus"
-    bmad_agent: "{validators_path}/test-quality.md"  # Tessa - Test Quality Analyst
+    bmad_agent: "{validators_path}/test-quality.md"  # Nemesis - Test quality persona
     prompt_file: "{agents_path}/test-quality.md"
     fresh_context: true
     trust_level: "medium"
-    timeout: 1200 # 20 minutes
+    timeout: 1200
 
   reviewer:
     description: "Adversarial code review - finds problems (SMART ROUTING)"
     steps: [7]
-    subagent_type: "general-purpose"  # Self-contained, specialized via prompt
     model: "opus"
-    # Reviewers are selected via agent-routing.yaml reviewer_routing section
-    # Based on complexity and file patterns touched
+    # HYBRID: Each reviewer type uses best Claude Code agent + BSE persona
+    subagent_type_by_role:
+      security: "auditor-security"        # OWASP expertise + Cerberus persona
+      architecture: "architect-reviewer"  # SOLID/patterns + Hestia persona
+      performance: "optimizer-performance" # Perf expertise + Apollo persona
+      accessibility: "accessibility-expert" # WCAG expertise + Iris persona
+      quality: "general-purpose"          # Flexibility + Arete persona
     smart_spawn: true
     routing_config: "{agent_routing.config_file}"
     fresh_context: true
-    adversarial: true # Goal: find issues
-    trust_level: "high" # Wants to find problems
-    timeout: 1800 # 30 minutes
+    adversarial: true
+    trust_level: "high"
+    timeout: 1800
 
-    # Base reviewer count by complexity (before conditional reviewers)
     review_agent_count:
-      micro: 2 # Sasha (Security) + Rosie (Architect)
-      standard: 3 # Sasha (Security) + Leo (Logic) + Rosie (Architect)
-      complex: 4 # Sasha (Security) + Leo (Logic) + Rosie (Architect) + Quinn (Quality)
+      micro: 2
+      standard: 3
+      complex: 4
 
-    # Reviewers are loaded from agents/reviewers/ directory
-    # See agent-routing.yaml reviewer_routing section for match rules
     review_types:
-      security: "{reviewers_path}/security.md"      # Sasha the Security Sentinel - ALWAYS
-      architecture: "{reviewers_path}/architecture.md"  # Rosie the Architecture Guardian - ALWAYS
-      performance: "{reviewers_path}/performance.md"    # Leo the Logic Hunter - standard+
-      accessibility: "{reviewers_path}/accessibility.md" # Ada the Accessibility Advocate - frontend
-      quality: "{reviewers_path}/quality.md"        # Quinn the Quality Crusader - complex only
+      security: "{reviewers_path}/security.md"
+      architecture: "{reviewers_path}/architecture.md"
+      performance: "{reviewers_path}/performance.md"
+      accessibility: "{reviewers_path}/accessibility.md"
+      quality: "{reviewers_path}/quality.md"
 
     # Conditional reviewers (based on file patterns)
     # These are ADDED to the base count when triggered
@@ -250,7 +268,7 @@ agents:
 # Playbook configuration (v4.0)
 playbooks:
   enabled: true # Set to false in project config to disable
-  directory: "docs/playbooks/implementation-playbooks"
+  directory: "docs/implementation-playbooks"
   bootstrap_mode: true # Auto-initialize if missing
   max_load: 3
   auto_apply_updates: false # Require manual review of playbook updates

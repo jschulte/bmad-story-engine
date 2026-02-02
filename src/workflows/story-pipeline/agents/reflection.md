@@ -44,10 +44,10 @@ Review the story lifecycle and identify what future builders should know:
 
 ```bash
 # List all existing playbooks
-ls docs/playbooks/implementation-playbooks/
+ls docs/implementation-playbooks/
 
 # Search for related content
-grep -r "{{keyword}}" docs/playbooks/implementation-playbooks/
+grep -r "{{keyword}}" docs/implementation-playbooks/
 ```
 
 **Look for playbooks that might already cover:**
@@ -164,7 +164,7 @@ Brief description of what this playbook covers.
   ],
   "playbook_action": {
     "action": "updated" | "created" | "skipped",
-    "path": "docs/playbooks/implementation-playbooks/{{name}}.md",
+    "path": "docs/implementation-playbooks/{{name}}.md",
     "reason": "Why this action was taken",
     "sections_modified": ["Common Gotchas", "Code Patterns"]
   }

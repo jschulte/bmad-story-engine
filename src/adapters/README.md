@@ -1,0 +1,92 @@
+# BMAD Story Engine - Multi-Platform Adapters
+
+This directory contains adapters that allow the BMAD Story Engine pipeline to run on different AI coding assistants.
+
+## Supported Platforms
+
+| Platform | Status | Parallel Execution | Agent Resumption | Notes |
+|----------|--------|-------------------|------------------|-------|
+| **Claude Code** | ✅ Full Support | ✅ Native | ✅ Native | Primary platform, all features |
+| **OpenCode** | ✅ Supported | ⚠️ Via orchestration | ❌ Fresh context | Task tool compatible |
+| **GitHub Copilot** | ✅ Supported | ✅ Automatic | ✅ `--resume` flag | Agent Skills based |
+| **Codex CLI** | ✅ Supported | ❌ Sequential | ❌ Fresh context | Instruction-based |
+
+## Installation
+
+Run the setup script for your platform:
+
+```bash
+# Detect platform and install appropriate adapters
+./src/adapters/install.sh
+
+# Or specify explicitly:
+./src/adapters/install.sh --platform opencode
+./src/adapters/install.sh --platform copilot
+./src/adapters/install.sh --platform codex
+./src/adapters/install.sh --platform claude-code  # Default, uses existing setup
+```
+
+## Architecture
+
+```
+adapters/
+├── README.md                    # This file
+├── install.sh                   # Installation script
+├── universal/
+│   ├── workflow-orchestrator.md # Platform-agnostic orchestration guide
+│   └── agents/                  # Portable agent definitions
+├── opencode/
+│   └── agents/                  # OpenCode .md agent configs
+├── copilot/
+│   └── skills/                  # GitHub Copilot Agent Skills
+└── codex/
+    └── instructions/            # Codex CLI instructions
+```
+
+## How It Works
+
+### Claude Code (Native)
+Uses the built-in Task tool with `subagent_type` parameter to spawn specialized agents. Full parallel execution via multiple Task calls in a single message.
+
+### OpenCode
+Uses `.opencode/agents/` Markdown configurations with YAML frontmatter. The Task tool invokes subagents. Parallel execution requires external orchestration (vibe-kanban) or runs sequentially.
+
+### GitHub Copilot
+Uses Agent Skills (`.github/skills/`) folders. Each agent becomes a skill with `SKILL.md` + resources. Copilot automatically delegates and can run agents in parallel.
+
+### Codex CLI
+Uses instruction files that Codex loads into context. Sequential execution only. The orchestrator follows phases manually with Codex handling implementation.
+
+## Platform-Specific Limitations
+
+### OpenCode
+- No built-in agent resumption (fresh context each time)
+- Parallel execution requires external tooling
+- Must define all agent types manually
+
+### GitHub Copilot
+- Less explicit control over parallel execution timing
+- Agent Skills are relatively new (Dec 2025)
+- Some features require Copilot Pro/Business
+
+### Codex CLI
+- No subagent system - runs as single agent
+- Sequential execution only
+- Simpler but less powerful
+
+## Workflow Compatibility
+
+The core 7-phase workflow remains identical across platforms:
+
+1. **PREPARE** - Story validation + playbook loading
+2. **BUILD** - Implementation with TDD
+3. **VERIFY** - Multi-reviewer validation
+4. **ASSESS** - Coverage gate + issue triage
+5. **REFINE** - Fix issues iteratively
+6. **COMMIT** - Reconcile story + git commit
+7. **REFLECT** - Update playbooks with learnings
+
+What changes per platform:
+- How agents are spawned (Task tool vs Skills vs instructions)
+- Whether parallel execution is automatic or manual
+- Whether agent context can be resumed

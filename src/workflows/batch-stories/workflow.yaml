@@ -1,7 +1,7 @@
 name: batch-stories
-description: "Interactive batch selector for story-pipeline with complexity-based routing. Micro stories get lightweight path, standard stories get full pipeline, complex stories get enhanced validation."
-author: "BMad"
-version: "1.3.0"
+description: "Interactive batch selector for story-pipeline with complexity-based routing, smart wave ordering, and comprehensive session reporting."
+author: "Jonah Schulte (leveraging BMAD Method)"
+version: "1.4.0"
 
 # Critical variables from config
 config_source: "{project-root}/_bmad/bmm/config.yaml"
@@ -93,5 +93,23 @@ execution:
   continue_on_failure: true # Keep processing remaining stories if one fails
   display_progress: true # Show running summary after each story
   save_state: true # Save progress to resume if interrupted
+
+# Session reporting settings (NEW in v1.4.0)
+session_reporting:
+  enabled: true # Generate comprehensive session report at end
+  output_dir: "{sprint_artifacts}/session-reports"
+  include_sections:
+    - executive_summary      # 2-3 paragraph narrative
+    - features_delivered     # Per-story feature descriptions
+    - technical_summary      # Files, tests, coverage tables
+    - verification_guide     # Manual testing checklist
+    - issues_and_debt        # Fixed and deferred issues
+    - next_steps             # Follow-up actions
+    - detailed_metrics       # Per-story breakdown (appendix)
+  report_agent:
+    name: "hermes"
+    prompt_file: "{installed_path}/agents/session-reporter.md"
+    subagent_type: "general-purpose"
+    model: "sonnet"
 
 standalone: true

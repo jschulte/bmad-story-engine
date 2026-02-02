@@ -1,0 +1,764 @@
+# Batch Review - Hardening Sweep Workflow
+
+**Version:** 1.0.0
+**Purpose:** Deep code review and hardening - run repeatedly until bulletproof
+
+---
+
+## Overview
+
+This workflow performs deep code review on existing implementations to find and fix issues that may have been missed. Unlike story-pipeline (which implements new stories), batch-review focuses purely on reviewing and hardening existing code.
+
+**Key Features:**
+- **Repeatable** - Run multiple times; each pass finds deeper issues
+- **Focus-able** - Provide guidance to target specific concerns
+- **Comprehensive** - Multi-perspective review from security, correctness, architecture, tests
+- **Action-oriented** - Finds issues AND fixes them
+
+---
+
+## Usage Examples
+
+```bash
+# Review all stories in an epic (default: find all bugs)
+/batch-review epic=17
+
+# Review specific stories with focus guidance
+/batch-review stories="17-1,17-2,17-3" focus="styling, UX, button placement"
+
+# Review specific paths
+/batch-review path="src/components" focus="accessibility compliance"
+
+# Security sweep
+/batch-review epic=17 focus="security vulnerabilities, auth bypass, injection"
+
+# Consistency sweep
+/batch-review epic=17 focus="error handling patterns, consistent API responses"
+
+# Performance sweep
+/batch-review path="src/api" focus="N+1 queries, caching opportunities, slow operations"
+```
+
+---
+
+## Phases
+
+```
+Phase 1: SCOPE ─────────────────────────────────────────
+         Analyze scope, identify files to review
+         ↓
+Phase 2: REVIEW ────────────────────────────────────────
+         Deep multi-perspective review (with focus if provided)
+         ↓
+Phase 3: ASSESS ────────────────────────────────────────
+         Themis triages findings (MUST_FIX / SHOULD_FIX / STYLE)
+         ↓
+Phase 4: FIX ───────────────────────────────────────────
+         Builder fixes MUST_FIX issues
+         ↓
+Phase 5: VERIFY ────────────────────────────────────────
+         Re-review fixes, check for regressions
+         ↓
+         ↓ (loop if new issues found)
+         ↓
+Phase 6: REPORT ────────────────────────────────────────
+         Generate hardening summary
+```
+
+---
+
+## Process
+
+<process>
+
+<step name="phase_1_scope">
+## Phase 1: SCOPE (1/6)
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🔍 PHASE 1: SCOPE (1/6)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Analyzing review scope...
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+### 1.1 Parse Input
+
+Extract scope from user input:
+
+```
+IF epic provided:
+  SCOPE_TYPE = "epic"
+  Find all stories: docs/stories/epic-{{epic}}/*.md
+  Extract file patterns from stories
+
+ELIF stories provided:
+  SCOPE_TYPE = "stories"
+  Parse story list: "17-1,17-2,17-3"
+  Find story files and extract file patterns
+
+ELIF path provided:
+  SCOPE_TYPE = "path"
+  Use provided paths directly
+
+ELIF since_commit provided:
+  SCOPE_TYPE = "git"
+  Get changed files: git diff --name-only {{since_commit}}..HEAD
+```
+
+### 1.2 Extract Focus (if provided)
+
+```
+IF focus provided:
+  FOCUS_ENABLED = true
+  FOCUS_PROMPT = "{{user_focus_input}}"
+
+  # Enhance review prompts with focus
+  REVIEW_GUIDANCE = `
+  **SPECIAL FOCUS REQUESTED:**
+  In addition to standard review, pay particular attention to:
+  {{FOCUS_PROMPT}}
+
+  Look for issues related to this focus across all files reviewed.
+  `
+ELSE:
+  FOCUS_ENABLED = false
+  REVIEW_GUIDANCE = ""
+```
+
+### 1.3 Analyze Scope
+
+```
+Task({
+  subagent_type: "general-purpose",
+  model: "sonnet",
+  description: "🔍 Analyzing review scope",
+  prompt: `
+Analyze the review scope and prepare for deep review.
+
+<scope>
+Type: {{SCOPE_TYPE}}
+Input: {{scope_input}}
+</scope>
+
+<stories_or_paths>
+{{IF SCOPE_TYPE == "epic" or "stories"}}
+[List story files with their file patterns]
+{{ELSE}}
+[List paths to review]
+{{ENDIF}}
+</stories_or_paths>
+
+**Tasks:**
+1. Identify all files that should be reviewed
+2. Categorize by type (frontend, backend, database, tests)
+3. Note which reviewers should be activated (accessibility for frontend, etc.)
+4. Estimate scope size
+
+**Output:**
+{
+  "scope_id": "epic-17-pass-1",
+  "files_to_review": [
+    { "path": "src/components/Button.tsx", "category": "frontend" },
+    ...
+  ],
+  "total_files": 25,
+  "categories": {
+    "frontend": 12,
+    "backend": 8,
+    "database": 2,
+    "tests": 3
+  },
+  "reviewers_needed": ["security", "correctness", "architecture", "accessibility"],
+  "estimated_complexity": "medium"
+}
+
+Save to: docs/sprint-artifacts/hardening/{{scope_id}}-scope.json
+`
+})
+```
+
+**📢 Orchestrator says:**
+> "Scope analyzed: **{{total_files}} files** to review across {{categories}}. {{IF FOCUS_ENABLED}}Focus: **{{FOCUS_PROMPT}}**{{ENDIF}}. Starting deep review..."
+
+</step>
+
+<step name="phase_2_review">
+## Phase 2: REVIEW (2/6)
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🔬 PHASE 2: REVIEW (2/6)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Deep multi-perspective review
+{{IF FOCUS_ENABLED}}Focus: {{FOCUS_PROMPT}}{{ENDIF}}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+### 2.1 Deep Review
+
+Spawn deep reviewer with all perspectives + optional focus:
+
+```
+Task({
+  subagent_type: "architect-reviewer",
+  model: "opus",
+  description: "🔬 Deep review of {{scope_id}}",
+  prompt: `
+You are conducting a **DEEP HARDENING REVIEW**.
+
+This is not a quick pass - you are looking for every issue that could cause problems.
+Take your time. Read every file carefully. Think about edge cases.
+
+<scope>
+{{List all files to review}}
+</scope>
+
+{{IF FOCUS_ENABLED}}
+<special_focus>
+**USER-REQUESTED FOCUS:**
+{{FOCUS_PROMPT}}
+
+In addition to standard review, dig deep into these specific concerns.
+Look for patterns, inconsistencies, and issues related to this focus.
+</special_focus>
+{{ENDIF}}
+
+<review_perspectives>
+
+## 1. Security (Cerberus) 🔐
+- SQL injection, XSS, command injection
+- Authentication bypass, authorization flaws
+- Secrets exposure, insecure storage
+- CSRF, session handling
+- Input validation gaps
+
+## 2. Correctness (Apollo) ⚡
+- Logic errors, off-by-one
+- Null/undefined handling
+- Edge cases not handled
+- Race conditions
+- Error handling gaps
+- State management issues
+
+## 3. Architecture (Hestia) 🏛️
+- Pattern violations
+- Coupling issues
+- Integration problems
+- API contract mismatches
+- Migration issues
+
+## 4. Test Quality (Nemesis) 🧪
+- Missing test cases
+- Inadequate coverage
+- Flaky tests
+- Missing edge case tests
+- Integration test gaps
+
+{{IF accessibility in reviewers_needed}}
+## 5. Accessibility (Iris) 🌈
+- WCAG AA compliance
+- Keyboard navigation
+- Screen reader support
+- Color contrast
+- Focus management
+{{ENDIF}}
+
+</review_perspectives>
+
+<output_format>
+For EVERY issue found:
+
+{
+  "issues": [
+    {
+      "id": "{{scope_id}}-001",
+      "perspective": "security|correctness|architecture|test_quality|accessibility|focus",
+      "severity": "critical|high|medium|low",
+      "file": "path/to/file.ts",
+      "line": 45,
+      "title": "Short description",
+      "description": "Detailed explanation of the issue",
+      "evidence": "Code snippet showing the problem",
+      "suggested_fix": "How to fix it",
+      "classification": "MUST_FIX|SHOULD_FIX|STYLE"
+    }
+  ],
+  "summary": {
+    "total_issues": N,
+    "by_perspective": { "security": 2, "correctness": 5, ... },
+    "by_severity": { "critical": 1, "high": 3, ... },
+    "by_classification": { "MUST_FIX": 8, "SHOULD_FIX": 2, "STYLE": 0 }
+  }
+}
+
+Save to: docs/sprint-artifacts/hardening/{{scope_id}}-review.json
+</output_format>
+
+**IMPORTANT:**
+- Read every file completely
+- Think about edge cases
+- Consider how components interact
+- Look for subtle bugs, not just obvious ones
+- If focus was provided, dedicate extra attention to those concerns
+`
+})
+```
+
+**📢 Orchestrator says:**
+> "Deep review complete. Found **{{total_issues}} issues** across {{perspectives}}. Sending to Themis for triage..."
+
+</step>
+
+<step name="phase_3_assess">
+## Phase 3: ASSESS (3/6)
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+⚖️ PHASE 3: ASSESS (3/6)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Themis triaging findings
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+### 3.1 Themis Triage
+
+Same triage logic as story-pipeline - err on the side of fixing.
+
+```
+Task({
+  subagent_type: "general-purpose",
+  model: "opus",
+  description: "⚖️ Themis triaging hardening findings",
+  prompt: `
+You are THEMIS ⚖️ - Titan of Justice.
+
+Triage these hardening findings. **ERR ON THE SIDE OF FIXING.**
+
+<all_issues>
+{{Issues from Phase 2}}
+</all_issues>
+
+<triage_rules>
+**MUST_FIX** - Any real issue. Default category.
+**SHOULD_FIX** - Large refactoring with speculative benefit only.
+**STYLE** - Clearly manufactured complaints only (<10%).
+
+If uncertain → MUST_FIX.
+</triage_rules>
+
+<output>
+{
+  "triage": [
+    {
+      "issue_id": "epic-17-pass-1-001",
+      "original_classification": "MUST_FIX",
+      "final_classification": "MUST_FIX",
+      "justification": "Real security issue - input not sanitized"
+    }
+  ],
+  "summary": {
+    "must_fix": N,
+    "should_fix": N,
+    "style": N
+  }
+}
+
+Save to: docs/sprint-artifacts/hardening/{{scope_id}}-triage.json
+</output>
+`
+})
+```
+
+**If no MUST_FIX issues:**
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✅ CLEAN PASS - No issues require fixing
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+→ Skip to Phase 6: REPORT
+
+**If MUST_FIX issues exist:**
+→ Continue to Phase 4: FIX
+
+</step>
+
+<step name="phase_4_fix">
+## Phase 4: FIX (4/6)
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🔨 PHASE 4: FIX (4/6)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Fixing {{must_fix_count}} issues
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+### 4.1 Group Issues by Category
+
+Group MUST_FIX issues by file category for efficient fixing:
+
+```
+frontend_issues = issues where file category is "frontend"
+backend_issues = issues where file category is "backend"
+database_issues = issues where file category is "database"
+```
+
+### 4.2 Fix Issues
+
+Spawn appropriate fixer for each category:
+
+```
+FOR EACH category WITH issues:
+
+  subagent = SELECT based on category:
+    frontend → "dev-frontend"
+    backend → "dev-typescript"
+    database → "database-administrator"
+    default → "general-purpose"
+
+  Task({
+    subagent_type: subagent,
+    model: "opus",
+    description: "🔨 Fixing {{category}} issues",
+    prompt: `
+  You are fixing issues found during hardening review.
+
+  <issues_to_fix>
+  {{List of MUST_FIX issues for this category}}
+  </issues_to_fix>
+
+  For each issue:
+  1. Read the file and understand the context
+  2. Implement the fix as suggested (or better)
+  3. Run tests to verify the fix
+  4. Ensure no regressions
+
+  <output>
+  {
+    "fixes_applied": [
+      {
+        "issue_id": "epic-17-pass-1-001",
+        "file": "path/to/file.ts",
+        "fix_description": "Added input sanitization",
+        "lines_changed": "45-52",
+        "tests_run": true,
+        "tests_passed": true
+      }
+    ],
+    "issues_remaining": [],
+    "notes": "Any complications or decisions made"
+  }
+
+  Save to: docs/sprint-artifacts/hardening/{{scope_id}}-fixes-{{category}}.json
+  </output>
+  `
+  })
+```
+
+**📢 Orchestrator says:**
+> "Fixed **{{fixed_count}}/{{must_fix_count}}** issues. Running verification..."
+
+</step>
+
+<step name="phase_5_verify">
+## Phase 5: VERIFY (5/6)
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✅ PHASE 5: VERIFY (5/6)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Verifying fixes and checking for regressions
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+### 5.1 Run Tests
+
+```bash
+npm test 2>&1 | tee test-output.txt
+```
+
+### 5.2 Verify Fixes
+
+```
+Task({
+  subagent_type: "testing-suite:test-engineer",
+  model: "opus",
+  description: "✅ Verifying hardening fixes",
+  prompt: `
+Verify that all fixes were correctly applied and no regressions introduced.
+
+<original_issues>
+{{MUST_FIX issues that were fixed}}
+</original_issues>
+
+<fixes_applied>
+{{Fixes from Phase 4}}
+</fixes_applied>
+
+<test_output>
+{{test-output.txt}}
+</test_output>
+
+**Verification Tasks:**
+1. Confirm each issue is actually fixed (not just patched over)
+2. Check that tests pass
+3. Look for any regressions introduced by the fixes
+4. Identify any new issues in the modified code
+
+<output>
+{
+  "verification_results": [
+    {
+      "issue_id": "epic-17-pass-1-001",
+      "verified": true,
+      "evidence": "Input now sanitized with DOMPurify at line 48"
+    }
+  ],
+  "regressions_found": [],
+  "new_issues_found": [],
+  "tests_passed": true,
+  "all_verified": true
+}
+
+Save to: docs/sprint-artifacts/hardening/{{scope_id}}-verification.json
+</output>
+`
+})
+```
+
+**If new issues or regressions found:**
+```
+ITERATION += 1
+
+IF ITERATION > MAX_ITERATIONS:
+  → Log remaining issues and continue to REPORT
+ELSE:
+  → Return to Phase 4: FIX with new issues
+```
+
+**If all verified:**
+→ Continue to Phase 6: REPORT
+
+</step>
+
+<step name="phase_6_report">
+## Phase 6: REPORT (6/6)
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📋 PHASE 6: REPORT (6/6)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Generating hardening report
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+### 6.1 Generate Report
+
+```
+Task({
+  subagent_type: "general-purpose",
+  model: "sonnet",
+  description: "📋 Generating hardening report",
+  prompt: `
+Generate a comprehensive hardening report.
+
+<scope>
+{{Scope from Phase 1}}
+</scope>
+
+<review_findings>
+{{Findings from Phase 2}}
+</review_findings>
+
+<triage>
+{{Triage from Phase 3}}
+</triage>
+
+<fixes>
+{{Fixes from Phase 4}}
+</fixes>
+
+<verification>
+{{Verification from Phase 5}}
+</verification>
+
+**Generate Report:**
+
+# Hardening Report: {{scope_id}}
+
+## Summary
+
+| Metric | Value |
+|--------|-------|
+| Files Reviewed | {{total_files}} |
+| Issues Found | {{total_issues}} |
+| MUST_FIX | {{must_fix}} |
+| Fixed | {{fixed}} |
+| Verified | {{verified}} |
+| Pass Status | {{CLEAN / ISSUES_REMAINING}} |
+
+{{IF FOCUS_ENABLED}}
+## Focus Area
+**User Guidance:** {{FOCUS_PROMPT}}
+**Focus-Related Issues:** {{focus_issues_count}}
+{{ENDIF}}
+
+## Issues by Perspective
+
+| Perspective | Found | Fixed |
+|-------------|-------|-------|
+| Security 🔐 | N | N |
+| Correctness ⚡ | N | N |
+| Architecture 🏛️ | N | N |
+| Test Quality 🧪 | N | N |
+{{IF accessibility}}
+| Accessibility 🌈 | N | N |
+{{ENDIF}}
+
+## Fixed Issues
+
+{{For each fixed issue, brief summary}}
+
+## Remaining Tech Debt (SHOULD_FIX)
+
+{{List of SHOULD_FIX items for future}}
+
+## Recommendations
+
+{{Based on patterns seen, what should be done next}}
+
+## Next Steps
+
+{{IF CLEAN_PASS}}
+✅ **Clean pass achieved.** Code is hardened for this scope.
+Consider running again with a different focus to find other issue types.
+{{ELSE}}
+⚠️ **Issues remain.** Consider running `/batch-review` again.
+Remaining issues logged to: docs/sprint-artifacts/hardening/{{scope_id}}-remaining.json
+{{ENDIF}}
+
+---
+
+Save to: docs/sprint-artifacts/hardening/{{scope_id}}-report.md
+`
+})
+```
+
+### 6.2 Update History
+
+Track passes for this scope:
+
+```json
+{
+  "scope_id": "epic-17",
+  "passes": [
+    {
+      "pass_number": 1,
+      "timestamp": "2024-...",
+      "issues_found": 15,
+      "issues_fixed": 12,
+      "focus": null
+    },
+    {
+      "pass_number": 2,
+      "timestamp": "2024-...",
+      "issues_found": 5,
+      "issues_fixed": 5,
+      "focus": "security vulnerabilities"
+    }
+  ],
+  "status": "hardened"  // or "in_progress"
+}
+```
+
+### 6.3 Display Summary
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+{{✅ or ⚠️}} HARDENING COMPLETE: {{scope_id}}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📊 This Pass:
+   • Files Reviewed: {{total_files}}
+   • Issues Found: {{total_issues}}
+   • Issues Fixed: {{fixed}}
+   {{IF FOCUS_ENABLED}}
+   • Focus: "{{FOCUS_PROMPT}}"
+   {{ENDIF}}
+
+📈 Progress:
+   • Pass #{{pass_number}}
+   • Total Fixed (all passes): {{cumulative_fixed}}
+   • Status: {{HARDENED / IN_PROGRESS}}
+
+{{IF CLEAN_PASS}}
+✅ Clean pass! No MUST_FIX issues remaining.
+   Run again with different focus to find other issue types.
+{{ELSE}}
+⚠️ {{remaining}} issues logged as tech debt.
+   Consider running again: /batch-review {{scope_input}}
+{{ENDIF}}
+
+📄 Full Report:
+   docs/sprint-artifacts/hardening/{{scope_id}}-report.md
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+</step>
+
+</process>
+
+---
+
+## Focus Examples
+
+**Default (no focus):** Standard multi-perspective review
+```
+/batch-review epic=17
+```
+
+**UX/Styling Focus:**
+```
+/batch-review epic=17 focus="styling, UX, button placement, context menus, visual consistency"
+```
+
+**Security Sweep:**
+```
+/batch-review epic=17 focus="security vulnerabilities, authentication, authorization, input validation, secrets"
+```
+
+**Accessibility Audit:**
+```
+/batch-review path="src/components" focus="WCAG AA compliance, keyboard navigation, screen reader, focus management"
+```
+
+**Performance Hunt:**
+```
+/batch-review path="src/api" focus="N+1 queries, caching, database performance, slow operations, memory leaks"
+```
+
+**Consistency Check:**
+```
+/batch-review epic=17 focus="error handling patterns, API response formats, naming conventions, code style"
+```
+
+**Test Coverage:**
+```
+/batch-review epic=17 focus="missing tests, edge cases, error conditions, integration tests"
+```
+
+---
+
+## Hardening Strategy
+
+For maximum hardening, run multiple passes with different focuses:
+
+1. **Pass 1:** Default (all perspectives) - catch obvious issues
+2. **Pass 2:** Security focus - deep security audit
+3. **Pass 3:** Accessibility focus - ensure compliance
+4. **Pass 4:** Performance focus - optimize
+5. **Pass 5:** Consistency focus - unify patterns
+
+Each pass builds on the previous, resulting in thoroughly hardened code.

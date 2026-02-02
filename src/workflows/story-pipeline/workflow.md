@@ -148,7 +148,7 @@ token_efficiency:
 
 playbooks:
   enabled: true
-  directory: "docs/playbooks/implementation-playbooks"
+  directory: "docs/implementation-playbooks"
   max_load: 3
   auto_apply_updates: false
 </config>
@@ -352,7 +352,7 @@ IF all checks pass:
 STORY_KEYWORDS=$(grep -E "^## Story Title|^### Feature" "$STORY_FILE" | sed 's/[#]//g' | tr '\n' ' ')
 ```
 
-Use Grep tool on `docs/playbooks/implementation-playbooks/` to find matching playbooks (max 3).
+Use Grep tool on `docs/implementation-playbooks/` to find matching playbooks (max 3).
 
 Store playbook content for Metis.
 
@@ -394,65 +394,100 @@ EOF
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 🔨 PHASE 2: BUILD (2/7)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Metis implements with TDD
+Smart Builder Selection + TDD Implementation
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
-**Load Metis persona:**
-Read: `{project-root}/_bmad/bse/agents/builder.md`
+### Step 1: Smart Builder Selection (v5.0)
 
-**Spawn Metis and SAVE agent_id:**
+**Load the agent routing configuration:**
+```
+Read: {project-root}/_bmad/bse/agent-routing.yaml
+```
+
+**Analyze story for routing signals:**
+1. Extract file patterns from story tasks (e.g., `app/api/**`, `components/**`, `prisma/**`)
+2. Extract keywords from story content (e.g., "API", "component", "migration")
+3. Check package.json for framework indicators (react, vue, fastapi, etc.)
+
+**Match against builder_routing rules (first match wins):**
+- `frontend-react` → Apollo ⚛️ (React/Next.js components)
+- `backend-typescript` → Hephaestus 🔥 (API routes, services)
+- `database-prisma` → Athena 🦉 (migrations, schema changes)
+- `infrastructure` → Atlas 🌍 (CI/CD, Docker, Terraform)
+- `general` → Metis 🔨 (fallback for mixed/unclear stories)
+
+**Load the matched specialized builder prompt:**
+```
+# Example: If story touches app/api/** files
+Read: {project-root}/_bmad/bse/agents/builders/backend-typescript.md
+BUILDER_NAME = "Hephaestus"
+BUILDER_EMOJI = "🔥"
+BUILDER_SPECIALTY = "Backend TypeScript API Development"
+```
+
+### Step 2: Spawn Specialized Builder
+
+**Display selected builder:**
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🔨 PHASE 2: BUILD - {{BUILDER_EMOJI}} {{BUILDER_NAME}}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+{{BUILDER_NAME}} is building... this may take a few minutes.
+Selected for: {{BUILDER_SPECIALTY}}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+**Spawn builder Task with specialized prompt:**
 
 ```
 BUILDER_TASK = Task({
   subagent_type: "general-purpose",
   model: "opus",
-  description: "🔨 Metis building {{story_key}}",
+  description: "{{BUILDER_EMOJI}} {{BUILDER_NAME}} building {{story_key}}",
   prompt: `
-You are METIS 🔨 - Goddess of Wisdom, Skill, and Craft.
-
-<persona>
-[INJECT persona section from _bmad/bse/agents/builder.md]
-</persona>
+<agent_persona>
+[INLINE: Content from the selected builder file, e.g., agents/builders/backend-typescript.md]
+</agent_persona>
 
 You are implementing story {{story_key}}.
 
-<execution_context>
-@patterns/tdd.md
-@patterns/agent-completion.md
-</execution_context>
-
-<context>
-Story: [inline story file content]
+<story_file>
+[INLINE: Full story file content]
+</story_file>
 
 {{IF playbooks loaded}}
-Relevant Playbooks:
-[inline playbook content]
+<relevant_playbooks>
+[INLINE: Playbook content that was loaded in Phase 1]
+</relevant_playbooks>
 {{ENDIF}}
-</context>
 
 <objective>
-1. Review story tasks and acceptance criteria
-2. Review playbooks for gotchas and patterns
-3. Analyze what exists vs needed (gap analysis)
-4. **Write tests FIRST** (TDD)
+1. Review story tasks and acceptance criteria thoroughly
+2. Review playbooks for gotchas and patterns (if provided)
+3. Analyze what exists vs what's needed (gap analysis)
+4. **Write tests FIRST** (TDD - red/green/refactor)
 5. Implement production code to pass tests
+6. Run tests and linting before completing
 </objective>
 
 <constraints>
+- Follow the patterns and conventions in the codebase
 - Run tests and linting before finishing
 - DO NOT update story checkboxes (Orchestrator does this)
-- DO NOT commit changes yet (happens after review)
+- DO NOT commit changes yet (happens after review passes)
 </constraints>
 
 <completion_format>
 {
-  "agent": "metis",
+  "agent": "{{BUILDER_NAME | lowercase}}",
   "story_key": "{{story_key}}",
   "status": "SUCCESS" | "FAILED",
   "files_created": [...],
   "files_modified": [...],
-  "tests_added": { "total": 12, "passing": 12 }
+  "tests_added": { "total": N, "passing": N },
+  "tasks_addressed": ["task 1", "task 2", ...],
+  "playbooks_reviewed": ["playbook1.md", ...]
 }
 
 Save to: docs/sprint-artifacts/completions/{{story_key}}-metis.json
@@ -463,7 +498,7 @@ Save to: docs/sprint-artifacts/completions/{{story_key}}-metis.json
 BUILDER_AGENT_ID = {{extract agent_id from Task result}}
 ```
 
-**Store Metis agent ID for resume later.**
+**Store builder agent ID for resume in Phase 5.**
 
 ### Update Progress
 
@@ -792,7 +827,7 @@ fi
 
 ### 4.2 Themis Triage
 
-**Purpose:** Triage issues pragmatically, but err on the side of fixing. Quick fixes always get done.
+**Purpose:** Triage issues pragmatically, but **strongly err on the side of fixing**. Only filter clearly manufactured complaints.
 
 ```
 Task({
@@ -802,9 +837,9 @@ Task({
   prompt: `
 You are THEMIS ⚖️ - Titan of Justice and Fair Judgment.
 
-You hold the scales. Your job is NOT to find excuses to skip work. Your job is to filter out the truly pointless so Metis can focus on what matters.
+You hold the scales. Your job is NOT to find excuses to skip work. Your job is to filter out **clearly manufactured complaints** so Metis can focus on real issues.
 
-**CORE PRINCIPLE: If it's a quick fix (< 2 minutes), it's MUST_FIX. Period.**
+**CORE PRINCIPLE: If a reviewer found a real issue, it's MUST_FIX. Period.**
 
 <story_context>
 Complexity: {{COMPLEXITY}}
@@ -816,47 +851,50 @@ Story type: {{story_type}}
 </all_issues>
 
 <triage_instructions>
-**THE QUICK FIX RULE (MOST IMPORTANT):**
-If an issue can be fixed in under 2 minutes → MUST_FIX. Always. No debate.
+**THE "REAL ISSUE" RULE (MOST IMPORTANT):**
+If a reviewer found something real → MUST_FIX. Always. No debate.
 
-Quick fix examples that are ALWAYS MUST_FIX:
-- Add a null check (30 seconds)
-- Add an aria-label (30 seconds)
-- Rename a poorly-named variable (1 minute)
-- Add a missing error message (1 minute)
-- Fix a typo (10 seconds)
-- Add a missing test assertion (1 minute)
+Real issues that are ALWAYS MUST_FIX:
+- Missing null/error handling
+- Missing accessibility attributes
+- Poorly-named variables
+- Missing error messages
+- Typos in user-facing text
+- Missing test assertions
+- Security issues of any severity
+- Edge cases not handled
 
 **Classification:**
-1. **MUST_FIX** - Quick fixes (< 2 min) OR real issues. Metis fixes immediately.
-2. **SHOULD_FIX** - Significant effort (10+ min) AND debatable value. Log as tech debt.
-3. **STYLE** - Truly pointless, purely cosmetic, or reviewer misunderstood. (Rare!)
+1. **MUST_FIX** - Any real issue. Metis fixes immediately.
+2. **SHOULD_FIX** - Large refactoring with speculative benefit. Log as tech debt.
+3. **STYLE** - Clearly manufactured complaints (very rare!)
 
 **What's always MUST_FIX:**
-- Quick fixes (< 2 minutes) regardless of severity
+- Any real code quality issue
 - Security vulnerabilities (from Cerberus)
-- Test failures
+- Test failures or gaps
 - Broken functionality
 - Data loss risks
 - Integration failures
+- Accessibility gaps
 
 **SHOULD_FIX only when:**
-- Fix takes significant time (10+ minutes of refactoring)
-- AND benefit is unclear or future-focused
+- Fix requires substantial restructuring
+- AND benefit is speculative/future-focused
 - AND it doesn't affect current functionality
 
 **STYLE only when:**
-- Pure bikeshedding (preference, not problem)
+- Clearly manufactured (reviewer nitpicking to have something to say)
+- Pure bikeshedding (preference, not a real problem)
 - Reviewer misunderstood the code
-- Suggestion would make code worse
-- Exceeds project standards (AAA when targeting AA)
+- Suggestion would actually make code worse
 
 **Expected distribution:**
-- MUST_FIX: 60-80% (quick fixes + real problems)
-- SHOULD_FIX: 10-30% (big effort + debatable)
-- STYLE: 5-15% (truly pointless)
+- MUST_FIX: 80-95% (real issues get fixed)
+- SHOULD_FIX: 5-15% (big refactors)
+- STYLE: <10% (manufactured complaints only)
 
-If your STYLE count exceeds MUST_FIX, you're being too aggressive.
+If your STYLE count exceeds 10%, you're filtering too aggressively.
 **When uncertain → MUST_FIX.**
 </triage_instructions>
 
@@ -869,13 +907,13 @@ If your STYLE count exceeds MUST_FIX, you're being too aggressive.
       "original_classification": "MUST_FIX",
       "judgment": "UPHELD",
       "new_classification": "MUST_FIX",
-      "justification": "Quick fix - add null check takes 30 seconds"
+      "justification": "Real issue - missing null check could cause runtime error"
     }
   ],
   "summary": {
     "must_fix": 5,
     "should_fix": 1,
-    "style": 1
+    "style": 0
   }
 }
 
@@ -937,7 +975,7 @@ COVERAGE=$(grep -E "All files|Statements" coverage-output.txt | head -1 | grep -
 ```
 
 **📢 Orchestrator says (if issues remain):**
-> "Themis has triaged **{{total_count}} issues**. **{{must_fix}} need fixing** (including quick fixes we can knock out fast). {{should_fix}} logged as tech debt for later. Sending Metis to handle the MUST_FIX list."
+> "Themis has triaged **{{total_count}} issues**. **{{must_fix}} real issues need fixing**. {{should_fix}} logged as tech debt for later. Sending Metis to handle the MUST_FIX list."
 
 **📢 Orchestrator says (if no issues):**
 > "Clean pass! No issues need fixing - either reviewers found nothing, or the few suggestions were truly optional. Moving straight to commit."
@@ -1188,8 +1226,8 @@ Themis judgments: [inline triage]
 
 **Step 2: SEARCH existing playbooks first**
 \`\`\`bash
-ls docs/playbooks/implementation-playbooks/
-grep -r "{{keyword}}" docs/playbooks/implementation-playbooks/
+ls docs/implementation-playbooks/
+grep -r "{{keyword}}" docs/implementation-playbooks/
 \`\`\`
 
 **Step 3: Decide action**

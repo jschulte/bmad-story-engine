@@ -1,8 +1,34 @@
-# Story Pipeline v6.0 - Greek Pantheon Edition
+# Story Pipeline v6.1 - Token Optimization Edition
 
-Enhanced multi-agent pipeline featuring the Greek Pantheon: Metis (builder), Argus (inspector), Nemesis (test quality), specialized reviewers (Cerberus, Apollo, Hestia, Arete, Iris), Themis (arbiter for triage), and Mnemosyne (reflection).
+Enhanced multi-agent pipeline featuring the Greek Pantheon: Metis (builder), Argus (inspector), Nemesis (test quality), specialized reviewers (Cerberus, Apollo, Hestia, Arete, Iris), Themis (arbiter for triage), and Mnemosyne-Hermes (reflection + reporting).
 
-## What's New in v4.0
+## What's New in v6.1
+
+### 1. Combined Mnemosyne-Hermes Agent
+**Token Savings: ~5-8K per story**
+
+- Phase 7 now uses a single combined agent for reflection AND reporting
+- Both roles read the same artifacts - combining them eliminates duplicate context loading
+- Produces same outputs: playbook updates + completion report + TL;DR for batch aggregation
+
+### 2. Consolidated Multi-Reviewer Option
+**Token Savings: ~60-70% on Phase 3 for simpler stories**
+
+- New Multi-Reviewer agent covers all 4 perspectives (Argus, Nemesis, Cerberus, Hestia) in one pass
+- Used for trivial → standard complexity (1-10 tasks)
+- Parallel reviewers still used for complex/critical (11+ tasks) where independence matters
+
+### 3. Complexity-Based Review Routing
+**Smart routing based on story complexity**
+
+| Complexity | Review Mode | Token Impact |
+|------------|-------------|--------------|
+| trivial → standard | Consolidated (Multi-Reviewer) | ~60-70% savings |
+| complex → critical | Parallel (separate agents) | Maximum independence |
+
+## Previous Changes
+
+### Resume Builder (v3.2+)
 
 ### 1. Resume Builder (v3.2+)
 **Token Efficiency: 50-70% savings**
@@ -75,19 +101,19 @@ Phase 6: COMMIT ─────────────────────�
          Orchestrator reconciliation (evidence-based)
          ↓
 Phase 7: REFLECT ──────────────────────────────────────
-         📚 Mnemosyne updates playbooks
+         📚📜 Mnemosyne-Hermes: playbooks + report
 ```
 
 ## 6-Tier Complexity Routing
 
-| Tier | Phase 3 Agents | Reviewers |
-|------|----------------|-----------|
-| **trivial** | Argus only | None (1 agent) |
-| **micro** | Argus + Nemesis + 2 | Cerberus + Hestia |
-| **light** | Argus + Nemesis + 3 | Cerberus + Hestia + Apollo |
-| **standard** | Argus + Nemesis + 4 | Cerberus + Hestia + Apollo + Arete |
-| **complex** | Argus + Nemesis + 5 | All above + Iris (if frontend) |
-| **critical** | Argus + Nemesis + 6 | All reviewers |
+| Tier | Review Mode | Phase 3 Agents |
+|------|-------------|----------------|
+| **trivial** | Consolidated | Multi-Reviewer (4 perspectives in 1) |
+| **micro** | Consolidated | Multi-Reviewer (4 perspectives in 1) |
+| **light** | Consolidated | Multi-Reviewer (4 perspectives in 1) |
+| **standard** | Consolidated | Multi-Reviewer (4 perspectives in 1) |
+| **complex** | Parallel | Argus + Nemesis + Cerberus + Apollo + Hestia |
+| **critical** | Parallel | All above + Arete + Iris (if frontend) |
 
 ## Quality Gates
 
@@ -98,16 +124,17 @@ Phase 7: REFLECT ─────────────────────
 
 ## Token Efficiency
 
-- Phase 2 agents spawn in parallel (same cost, faster)
-- Phase 3 resumes Builder (50-70% token savings vs fresh agent)
-- Phase 4 Inspector only (no full re-review)
+- **Phase 2:** Agents spawn in parallel (same cost, faster)
+- **Phase 3:** Consolidated Multi-Reviewer for trivial→standard (60-70% savings)
+- **Phase 5:** Resumes Builder (50-70% token savings vs fresh agent)
+- **Phase 7:** Combined Mnemosyne-Hermes (5-8K savings per story)
 
 ## Playbook Configuration
 
 ```yaml
 playbooks:
   enabled: true
-  directory: "docs/playbooks/implementation-playbooks"
+  directory: "docs/implementation-playbooks"
   bootstrap_mode: true  # Auto-initialize if missing
   max_load: 3
   auto_apply_updates: false  # Require manual review
@@ -136,9 +163,11 @@ The workflow uses agents for **verification parallelism**, not **implementation 
 - `agents/test-quality.md` - **Nemesis** 🧪 - Test quality validation
 - `agents/arbiter.md` - **Themis** ⚖️ - Issue triage (MUST_FIX/SHOULD_FIX/STYLE)
 - `agents/fixer.md` - **Metis** 🔨 (resumed) - Issue resolution
-- `agents/reflection.md` - **Mnemosyne** 📚 - Playbook learning agent
+- `agents/reflection-reporter.md` - **Mnemosyne-Hermes** 📚📜 - Combined reflection + reporting (v6.1)
+- `agents/reflection.md` - **Mnemosyne** 📚 - Playbook learning (deprecated, use reflection-reporter)
 
 **Reviewer Squad:**
+- `agents/multi-reviewer.md` - **Review Council** 👁️🧪🔐🏛️ - Consolidated 4-perspective review (v6.1)
 - `agents/security-reviewer.md` - **Cerberus** 🔐 - Security review
 - `agents/logic-reviewer.md` - **Apollo** ⚡ - Logic/performance review
 - `agents/architect-integration-reviewer.md` - **Hestia** 🏛️ - Architecture review

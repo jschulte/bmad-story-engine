@@ -731,39 +731,242 @@ For each successful story:
 </step>
 
 <step name="summary">
-**Display Batch Summary**
+**Generate Comprehensive Session Summary**
 
-Read all progress artifacts to compile final summary:
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📜 PHASE: SESSION REPORT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Hermes compiling comprehensive session summary...
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+### Step 1: Gather All Completion Artifacts
+
 ```bash
+SESSION_TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+REPORT_DIR="docs/sprint-artifacts/session-reports"
+mkdir -p "$REPORT_DIR"
+
+# Collect all artifacts for processed stories
 for story in {{all_stories}}; do
-  PROGRESS="docs/sprint-artifacts/completions/${story}-progress.json"
-  [ -f "$PROGRESS" ] && cat "$PROGRESS"
+  echo "Gathering artifacts for $story..."
+
+  # Progress artifact
+  cat "docs/sprint-artifacts/completions/${story}-progress.json" 2>/dev/null
+
+  # Agent artifacts
+  cat "docs/sprint-artifacts/completions/${story}-metis.json" 2>/dev/null
+  cat "docs/sprint-artifacts/completions/${story}-argus.json" 2>/dev/null
+  cat "docs/sprint-artifacts/completions/${story}-themis.json" 2>/dev/null
+  cat "docs/sprint-artifacts/completions/${story}-mnemosyne.json" 2>/dev/null
 done
 ```
 
-**Display format (terminal-friendly):**
+### Step 2: Spawn Hermes (Session Reporter)
+
+**Load persona:**
+Read: `{project-root}/_bmad/bse/workflows/batch-stories/agents/session-reporter.md`
+
 ```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-✅ BATCH COMPLETE
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Task({
+  subagent_type: "general-purpose",
+  model: "sonnet",
+  description: "📜 Hermes generating session report",
+  prompt: `
+You are HERMES 📜 - Messenger of the Gods.
 
-Stories processed: {{total}}
-Successful: {{success_count}}
-Failed: {{fail_count}}
+Your job is to create a comprehensive Session Summary Report from the batch
+story implementation session that just completed.
 
-Results:
-  17-10  Occupant Agreement   ✅ done   25 tests   94.2% cov   abc123
-  17-11  Agreement Status     ✅ done   18 tests   87.5% cov   def456
+<stories_processed>
+{{list of story keys}}
+</stories_processed>
 
-Next Steps:
-  • Run /bmad:sprint-status to verify
-  • Review commits with git log
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+<individual_story_summaries>
+{{For each story, the full content of {{story}}-summary.md - these contain
+the detailed verification guides that we'll reference in the session report}}
+</individual_story_summaries>
+
+<hermes_artifacts>
+{{For each story, the {{story}}-hermes.json containing:
+  - tldr: One paragraph summary
+  - quick_stats: files, lines, tests, coverage, issues
+  - verification_items: count of manual checklist items
+}}
+</hermes_artifacts>
+
+<progress_artifacts>
+{{All collected {{story}}-progress.json files}}
+</progress_artifacts>
+
+<git_log>
+{{Recent commits from this session}}
+</git_log>
+
+<session_metadata>
+Session Start: {{start_time}}
+Session End: {{end_time}}
+Mode: {{sequential|parallel}}
+</session_metadata>
+
+**IMPORTANT:** Each story already has its own detailed summary report with verification guide.
+Your job is to create an AGGREGATE session report that:
+- Shows the TL;DR of each story (from hermes artifacts)
+- Provides aggregate metrics across all stories
+- Points users to individual story reports for detailed verification
+- Does NOT duplicate the per-story verification checklists (reference them instead)
+
+Generate a comprehensive report following the template in your persona file.
+The report should be 1-2 pages and include:
+
+1. **Executive Summary** (2-3 paragraphs)
+   - What was accomplished (business value)
+   - Key metrics (files, tests, coverage)
+   - Overall success/issues
+
+2. **Features Delivered** (per story)
+   - What each story delivers in user-facing terms
+   - Key capabilities added
+
+3. **Technical Summary**
+   - Files created/modified table
+   - Quality metrics table
+   - Git commits list
+
+4. **Verification Guide**
+   - How to run tests
+   - Manual testing checklist per story
+   - API testing examples if applicable
+
+5. **Issues & Tech Debt**
+   - What was fixed
+   - What was deferred
+
+6. **Next Steps**
+   - Immediate actions
+   - Follow-up tasks
+   - Pre-deployment checklist
+
+Save the full report to:
+  docs/sprint-artifacts/session-reports/session-{{timestamp}}.md
+
+Then output a condensed terminal summary.
+`
+})
 ```
 
-**Row format:** `Story  Title  Status  Tests  Coverage  Commit`
-- Coverage should ALWAYS be populated - it's a required quality gate
-- If coverage missing, show "-" (indicates pipeline bug)
+### Step 3: Display Quick Summary with TL;DRs
+
+After Hermes completes, display condensed results showing each story's TL;DR:
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📜 SESSION COMPLETE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📊 Session Totals
+   Stories: {{completed}}/{{total}} completed
+   Files:   {{total_files}} changed ({{total_lines}} lines)
+   Tests:   {{total_tests}} added
+   Coverage: {{avg_coverage}}% average
+   Issues:  {{total_issues}} found → {{total_fixed}} fixed
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📦 STORY SUMMARIES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+{{For each story, read from {{story}}-hermes.json:}}
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ {{story_key}}: {{story_title}}                                              │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ {{files}} files | {{lines}} lines | {{tests}} tests | {{coverage}}% cov    │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│ {{TL;DR from hermes.json - 3-5 sentences summarizing what was built        │
+│   and the key outcome. This gives the user a quick understanding           │
+│   of what each story accomplished without reading the full report.}}       │
+│                                                                             │
+│ 📋 Verification: {{verification_items}} checklist items                     │
+│ 📄 Full Report: completions/{{story_key}}-summary.md                        │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+{{Repeat box for each story...}}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📋 QUICK VERIFICATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+   npm test              # Run all {{total_tests}} tests
+   npm run dev           # Start dev server and explore
+
+   Per-story verification guides in:
+   docs/sprint-artifacts/completions/{{story}}-summary.md
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 REPORTS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+   Session Report: {{session_report_path}}
+   Story Reports:
+{{For each story:}}
+     • {{story_key}}: completions/{{story_key}}-summary.md
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+### Step 4: Offer Report Actions
+
+Use AskUserQuestion:
+```
+Session report generated. What would you like to do?
+
+Options:
+1. View full report in terminal (display report content)
+2. Open report file (provides path)
+3. Continue (done, move on)
+```
+
+**If user selects "View full report":**
+Read and display `docs/sprint-artifacts/session-reports/session-{{timestamp}}.md`
+
+### Alternative: Orchestrator-Generated Summary
+
+If Task agent is not available or for simpler sessions, the orchestrator can generate
+the summary directly by following this template:
+
+**Gather data:**
+```bash
+# Calculate totals
+TOTAL_FILES=0
+TOTAL_LINES=0
+TOTAL_TESTS=0
+COVERAGE_SUM=0
+
+for story in {{all_stories}}; do
+  PROGRESS="docs/sprint-artifacts/completions/${story}-progress.json"
+  if [ -f "$PROGRESS" ]; then
+    FILES=$(jq '.metrics.files_changed // 0' "$PROGRESS")
+    LINES=$(jq '.metrics.lines_added // 0' "$PROGRESS")
+    TESTS=$(jq '.metrics.tests_added // 0' "$PROGRESS")
+    COV=$(jq '.metrics.coverage | gsub("%"; "") | tonumber // 0' "$PROGRESS")
+
+    TOTAL_FILES=$((TOTAL_FILES + FILES))
+    TOTAL_LINES=$((TOTAL_LINES + LINES))
+    TOTAL_TESTS=$((TOTAL_TESTS + TESTS))
+    COVERAGE_SUM=$((COVERAGE_SUM + COV))
+  fi
+done
+
+AVG_COVERAGE=$((COVERAGE_SUM / {{story_count}}))
+```
+
+**Generate markdown report:**
+Use Write tool to create `docs/sprint-artifacts/session-reports/session-{{timestamp}}.md`
+following the template structure in `session-reporter.md`.
+
+**Display terminal summary:**
+Output the quick summary format shown above.
 </step>
 
 </process>
@@ -783,5 +986,7 @@ Next Steps:
 - [ ] Each story has Dev Agent Record filled
 - [ ] SHOULD_FIX/STYLE logged as tech debt (if any)
 - [ ] Sprint status updated for all stories
+- [ ] Session report generated and saved
+- [ ] Verification checklist provided
 - [ ] Summary displayed with results
 </success_criteria>
