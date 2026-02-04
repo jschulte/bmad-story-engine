@@ -39,7 +39,12 @@ WHILE true:
     - blockedBy == empty (all dependencies resolved)
 
   IF available is empty:
-    → All work done or blocked. Stop.
+    # CRITICAL: Do NOT work on blocked tasks. Do NOT read blocked story files.
+    # Do NOT "prepare" or "get ahead" on anything. Actually stop.
+    SendMessage(type="message", recipient="team-lead",
+      content="Idle — no unblocked tasks available. Standing by.")
+    → STOP. Exit your loop. You are done until dependencies resolve.
+    → The team lead will respawn you or assign work when tasks unblock.
 
   task = available[0]  # Prefer lowest ID (earliest story)
 
@@ -58,6 +63,20 @@ WHILE true:
   CONTINUE  # Check for more work
 ```
 
+### DEPENDENCY ENFORCEMENT — MANDATORY
+
+**NEVER start, prepare, read, or investigate a blocked task.** This is not a suggestion.
+
+A task is blocked if its `blockedBy` list contains ANY task that is not `completed`. Blocked means:
+- Do NOT read the story file "to get familiar"
+- Do NOT analyze the codebase "to prepare"
+- Do NOT claim the task hoping the dependency "will finish soon"
+- Do NOT rationalize that you can "build independently" — you cannot, because the dependency exists for a reason (shared files, schemas, components)
+
+**If no unblocked tasks exist, you MUST stop.** Send an idle message to team-lead and exit. Working on blocked tasks causes merge conflicts, integration failures, and wasted tokens.
+
+**Why this matters:** In a linear dependency chain (A → B → C → D), only ONE worker can be productive at a time. Workers 2 and 3 sitting idle is correct behavior, not a problem. The parallelism payoff comes when the chain fans out (e.g., after D, stories E/F/G/H all unblock simultaneously).
+
 ---
 
 ## Inputs (from Task Description)
@@ -72,129 +91,45 @@ Extract these from the task description when you claim it via `TaskGet(taskId)`.
 
 ---
 
-## Pipeline Execution
+## Pipeline Loading & Execution
 
-For each claimed story, execute the **full story-pipeline** as defined in:
-`{project-root}/_bmad/bse/workflows/story-pipeline/workflow.md`
+For each claimed story, you execute the **full story-pipeline**. You do NOT paraphrase or memorize the phases — you **load the workflow file and follow it exactly**.
 
-**You ARE the story-pipeline orchestrator for your claimed story.**
+### Step 1: Load Workflow Files
 
-### Step 0: Initialize
+Read these files at the start of each story (use the Read tool):
 
-Initialize the progress artifact:
+1. **`{project-root}/_bmad/bse/workflows/story-pipeline/workflow.md`** — The complete 7-phase pipeline definition. This is your primary instruction set for execution.
+2. **`{project-root}/_bmad/bse/workflows/story-pipeline/workflow.yaml`** — Pipeline configuration (agent routing, complexity thresholds, artifact paths).
+3. **`{project-root}/_bmad/bse/workflows/story-pipeline/agent-routing.yaml`** — Maps story types to builder personas and reviewer sets.
 
-```json
-{
-  "story_key": "{{story_key}}",
-  "worker_id": "{{CLAUDE_CODE_AGENT_ID}}",
-  "started_at": "{{ISO timestamp}}",
-  "current_phase": "PREPARE",
-  "phases": {
-    "PREPARE": { "status": "in_progress" },
-    "BUILD": { "status": "pending" },
-    "VERIFY": { "status": "pending" },
-    "ASSESS": { "status": "pending" },
-    "REFINE": { "status": "pending" },
-    "COMMIT": { "status": "pending" },
-    "REFLECT": { "status": "pending" }
-  },
-  "metrics": {}
-}
-```
+### Step 2: Execute Each Phase As Documented
 
-Save to: `docs/sprint-artifacts/completions/{{story_key}}-progress.json`
+Follow the phases exactly as defined in workflow.md: PREPARE → FORGE → BUILD → VERIFY → ASSESS → REFINE → COMMIT → REFLECT.
 
-### Phase 1: PREPARE
+**You ARE the pipeline orchestrator.** You coordinate phases sequentially and spawn Task sub-agents for each phase as the workflow specifies.
 
-- Read and validate the story file (12 BMAD sections required)
-- If story file is missing or invalid, report failure to team lead immediately
-- Load relevant playbooks from `docs/implementation-playbooks/` (max 3)
-- Determine complexity tier and reviewer set
-- Update progress artifact: PREPARE complete
+### Sub-Agent Spawning Authority
 
-### Phase 1.5: FORGE (Pygmalion)
+**You CAN and MUST spawn Task agents for pipeline phases.** As a `general-purpose` agent, you have access to ALL tools including the Task tool. The pipeline requires you to spawn:
 
-- If complexity >= light, invoke Pygmalion (Persona Forge) to analyze the story's domain
-- Pygmalion produces forged specialist specs (`{{story_key}}-pygmalion.json`)
-- Forged specialists augment the Pantheon reviewers in Phase 3 — they don't replace them
-- trivial/micro stories skip this phase entirely
-- Store `FORGED_SPECS` for use in Phase 3
-- Update progress artifact: FORGE complete
+- **BUILD phase:** `Task(subagent_type: ...)` → Builder agent (Metis, Apollo, Hephaestus, etc.)
+- **VERIFY phase:** `Task(subagent_type: ...)` → Reviewer agents (Argus, Nemesis, Cerberus, etc.) — spawn in parallel
+- **ASSESS phase:** `Task(subagent_type: ...)` → Themis (arbiter)
+- **REFINE phase:** `Task(resume: builder_id)` → Resume builder with fixes; `Task(resume: reviewer_id)` → Re-verify
+- **REFLECT phase:** `Task(subagent_type: ...)` → Mnemosyne (reflection)
 
-### Phase 2: BUILD
+Use `model: "opus"` for builder and reviewer agents. Use `run_in_background: true` for parallel reviewer spawns.
 
-Spawn builder as a Task agent with hybrid agent mapping:
+### Step 3: Save Artifacts After Each Phase
 
-- React/Next.js → `dev-frontend` + `builders/frontend-react.md` (Apollo)
-- TypeScript API → `dev-typescript` + `builders/backend-typescript.md` (Hephaestus)
-- Database/Prisma → `database-administrator` + `builders/database-prisma.md` (Athena)
-- Infrastructure → `engineer-deployment` + `builders/infrastructure.md` (Atlas)
-- General/Mixed → `general-purpose` + `builders/general.md` (Metis)
+Update the progress artifact (`completions/{{story_key}}-progress.json`) after each phase completes. The artifact format is defined in the Completion Artifact section below.
 
-Pass story content, playbooks, and project context. Collect builder artifact. Save agent_id for potential resume in Phase 5.
+### COMMIT Phase — Additional Rules for Swarm Mode
 
-Update progress artifact: BUILD complete with file/line counts.
-
-### Phase 3: VERIFY
-
-Based on complexity tier:
-
-**Trivial→Standard:** Spawn consolidated Multi-Reviewer (4 perspectives in 1 pass)
-
-**Complex→Critical:** Spawn parallel reviewers:
-- 👁️ Argus (inspector) — always included
-- 🧪 Nemesis (test quality) — light+ tiers
-- 🔐 Cerberus (security) — standard+ tiers
-- ⚡ Apollo (logic/performance) — complex+ tiers
-- 🏛️ Hestia (architecture) — micro+ tiers
-- ✨ Arete (quality) — critical only
-- 🌈 Iris (accessibility) — auto-included for frontend stories
-- 🗿 Forged specialists from Pygmalion (if any) — spawned in same parallel batch
-
-Forged specialists use the same artifact format as Pantheon reviewers, so they feed directly into Phase 4 with no special handling.
-
-Collect all reviewer artifacts (Pantheon + forged). Update progress artifact: VERIFY complete with issue counts.
-
-### Phase 4: ASSESS
-
-- Check coverage gate (≥80% threshold)
-- Spawn Themis (arbiter) to triage issues into MUST_FIX / SHOULD_FIX / STYLE
-- If zero MUST_FIX → skip Phase 5
-- Update progress artifact: ASSESS complete with triage results
-
-### Phase 5: REFINE (iterative, max 3)
-
-1. Resume Metis with MUST_FIX issues
-2. Resume only reviewers who had MUST_FIX issues to verify fixes
-3. If iteration 2+, add fresh-eyes reviewer
-4. Loop until zero MUST_FIX remaining or max iterations reached
-
-Update progress artifact after each iteration.
-
-### Phase 6: COMMIT
-
-**CRITICAL: Acquire git commit lock before committing (see Git Commit Queue below)**
-
-1. Read the story file
-2. Check off completed tasks (`- [ ]` to `- [x]`) using Argus evidence
-3. Fill the Dev Agent Record section
-4. Update sprint-status.yaml: story status to `done`
-5. Acquire commit lock → git add + commit → release lock
-
-Create two commits:
-- Implementation commit: `feat({story_key}): {title}`
-- Reconciliation commit: `chore({story_key}): reconcile story completion`
-
-Update progress artifact: COMMIT complete with git hashes.
-
-### Phase 7: REFLECT
-
-Spawn Mnemosyne (combined reflection + reporting):
-- Extract learnings, update playbooks
-- Generate story completion report (`{{story_key}}-summary.md`)
-- Generate Mnemosyne artifact (`{{story_key}}-hermes.json` with TL;DR + stats)
-
-Update progress artifact: REFLECT complete, final metrics.
+When committing in swarm mode, you MUST use the Git Commit Queue Protocol (see below) to serialize commits across parallel workers. Create two commits:
+- Implementation: `feat({{story_key}}): {{title}}`
+- Reconciliation: `chore({{story_key}}): reconcile story completion`
 
 ---
 

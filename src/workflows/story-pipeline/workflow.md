@@ -1,4 +1,4 @@
-# Story Pipeline v7.0 - Pygmalion Edition
+# Story Pipeline v7.1 - Context Optimization Edition
 
 <purpose>
 Implement a story using parallel verification agents with Builder context reuse.
@@ -44,16 +44,26 @@ Measure twice, cut once. Trust but verify. Evidence-based validation. Self-impro
 <execution_discipline>
 **CRITICAL: How This Workflow Executes**
 
-This workflow is designed to run in the **main Claude context** (the orchestrator).
-It is invoked via `/bmad_bse_story-pipeline` (a Skill), NOT as a Task subagent.
+This workflow runs in TWO contexts. The phases, quality gates, and artifacts are IDENTICAL in both.
 
-**Correct Execution Flow:**
+### Context 1: Main Session (Sequential — via Skill)
+
 1. User invokes `/bmad_bse_story-pipeline {story-key}`
-2. Orchestrator (main context) loads this workflow.md
-3. Orchestrator executes phases sequentially, spawning Task agents ONLY as defined below
-4. Task agents return artifacts; orchestrator continues with next phase
+2. Main session loads this workflow.md
+3. Main session executes phases sequentially, spawning Task agents as defined below
+4. Task agents return artifacts; main session continues with next phase
 
-**Task Agents Are ONLY Used For:**
+### Context 2: Heracles Teammate (Parallel — via batch-stories swarm)
+
+1. Heracles worker claims a story from the shared TaskList
+2. Heracles reads this workflow.md file directly (no Skill invocation needed)
+3. Heracles executes phases sequentially, spawning Task sub-agents as defined below
+4. Task sub-agents return artifacts; Heracles continues with next phase
+
+**This works because `general-purpose` Task agents have access to ALL tools, including the Task tool itself.** Heracles workers CAN and MUST spawn sub-agents for each pipeline phase.
+
+### Task Agents Used Per Phase (same in both contexts):
+
 - Phase 1.5 FORGE: `Task(subagent_type: "general-purpose")` → Pygmalion (Persona Forge) — complexity >= light only
 - Phase 2 BUILD: `Task(subagent_type: "general-purpose")` → Metis (Builder)
 - Phase 3 VERIFY: `Task(subagent_type: ...)` → Argus + Nemesis + Cerberus/Apollo/Hestia/Arete + forged specialists - in parallel
@@ -64,10 +74,12 @@ It is invoked via `/bmad_bse_story-pipeline` (a Skill), NOT as a Task subagent.
   - `Task(subagent_type: ...)` → Fresh eyes (iteration 2+)
 - Phase 7 REFLECT: `Task(subagent_type: ...)` → Mnemosyne (Reflection)
 
-**NEVER DO THIS:**
+### NEVER DO THIS (applies in BOTH contexts):
+
 - Spawn a `dev-typescript` or other Task agent to implement a story outside this workflow
 - Use Task tool to bypass the multi-agent verification structure
-- Let the orchestrator write implementation code directly (delegate to Metis)
+- Let the orchestrator/worker write implementation code directly (delegate to Metis)
+- Paraphrase or summarize pipeline phases — load and follow THIS file
 
 **WHY:**
 Ad-hoc Task agents lack:
@@ -86,7 +98,7 @@ The workflow structure EXISTS to prevent bugs that slip through when a single ag
 
 <config>
 name: story-pipeline
-version: 7.0.0
+version: 7.1.0
 execution_mode: multi_agent
 
 phases:
@@ -148,6 +160,8 @@ quality_gates:
 
 token_efficiency:
   - Phase 3 agents spawn in parallel (same cost, faster)
+  - Phase 3 Option B: orchestrator pre-reads files once, builds structural digest, partitions files by reviewer concern (~50% input token reduction)
+  - Phase 3 Option B: all prompts share identical prefix (story + digest) for API prompt cache hits
   - Phase 5 resumes Metis (50-70% token savings vs fresh agent)
   - Phase 5 resumes ONLY reviewers who had MUST_FIX issues (targeted verification)
   - Fresh eyes added only on iteration 2+ (avoids redundant full re-review)
@@ -734,7 +748,126 @@ Save to: docs/sprint-artifacts/completions/{{story_key}}-{{spec.id}}.json
 
 **CRITICAL: Spawn ALL agents in ONE message (parallel execution)**
 
-### Argus 👁️ (Inspector) - ALWAYS SPAWN
+#### Pre-Read & Context Assembly (Token Optimization v7.1)
+
+Before spawning any reviewer, the orchestrator reads ALL implementation files ONCE and constructs:
+
+1. **A structural digest** (~200-400 lines) containing:
+   - File inventory (path, line count, type classification)
+   - Function/class/component signatures per file (exports only for large files)
+   - Import graph (which files import what)
+   - Story task-to-file mapping from Metis output
+
+2. **Classified file buckets** for targeted reviewer context
+
+**File Classification (first-match rules by path/extension):**
+
+```
+CLASSIFY each file from metis.json output:
+
+test:       *test*, *spec*, __tests__/*, *.test.ts, *.spec.ts
+migration:  *migration*, prisma/migrations/*
+config:     *.config.*, .env*, package.json, tsconfig*, next.config*
+route:      *route*, *router*, *endpoint*, app/api/*, pages/api/*
+auth:       *auth*, *session*, *token*, *credential*, *permission*, *rbac*, *middleware*
+ui:         *component*, *page.tsx, *layout*, *template*, *.css, *.scss
+database:   *prisma*, *schema*, *model*, *repository*, *dao*, *query*, *migration*
+types:      *types*, *interfaces*, *enums*, *.d.ts
+security:   *crypto*, *encrypt*, *hash*, *sanitize*, *validate*
+logic:      everything else (services, utils, lib, helpers, etc.)
+```
+
+**Build the structural digest:**
+
+```
+STRUCTURAL_DIGEST = ""
+
+# 1. File inventory table
+STRUCTURAL_DIGEST += "## File Inventory\n"
+STRUCTURAL_DIGEST += "| File | Lines | Type | Exports |\n"
+FOR EACH file IN metis_files:
+  content = Read(file)
+  line_count = content.lines.length
+  file_type = classify(file)
+  exports = extract_export_signatures(content)  # function/class/const names + params
+  STRUCTURAL_DIGEST += "| {file} | {line_count} | {file_type} | {exports} |\n"
+
+# 2. Import graph
+STRUCTURAL_DIGEST += "\n## Import Graph\n"
+FOR EACH file IN metis_files:
+  imports = extract_imports(content)
+  STRUCTURAL_DIGEST += "{file} imports: {imports}\n"
+
+# 3. Task-to-file mapping (from metis.json tasks_addressed)
+STRUCTURAL_DIGEST += "\n## Task-to-File Mapping\n"
+FOR EACH task IN metis.tasks_addressed:
+  related_files = files where task is implemented
+  STRUCTURAL_DIGEST += "- {task} → {related_files}\n"
+
+# Budget: truncate to ~400 lines. For 40+ file implementations,
+# show export-level signatures only (no function bodies).
+```
+
+**Partition files by reviewer concern:**
+
+```
+# Full context agents (cross-cutting — receive ALL files inline):
+ARGUS_FILES   = ALL metis_files     # Must verify every task with file:line
+HESTIA_FILES  = ALL metis_files     # Architecture is inherently cross-cutting
+
+# Focused context agents (naturally scoped — receive subset + digest):
+NEMESIS_FILES  = files classified as: test
+                 # Gets production signatures via digest
+CERBERUS_FILES = files classified as: route, auth, database, security, config
+                 # + any file containing: password, secret, token, cookie, session, cors, csrf
+APOLLO_FILES   = files classified as: logic, route, database, types
+ARETE_FILES    = ALL metis_files EXCEPT files classified as: test
+                 # Reviews production code quality, skips test files
+
+# Forged specialists: match spec.review_focus keywords against classifications.
+# If unclear or keywords span 3+ categories → ALL files.
+```
+
+**Cache-optimized prompt structure:**
+
+All reviewer prompts share an IDENTICAL prefix so the API prompt cache pays for it once:
+
+```
+[IDENTICAL PREFIX — cached after agent #1]
+  <story>{{story content}}</story>
+  <structural_digest>{{digest built above}}</structural_digest>
+  <metis_completion>{{metis.json summary}}</metis_completion>
+
+[AGENT-SPECIFIC — varies per agent]
+  <files_for_review>{{partitioned file contents}}</files_for_review>
+  <agent_persona>{{role + instructions}}</agent_persona>
+```
+
+**IMPORTANT:** The `<story>`, `<structural_digest>`, and `<metis_completion>` blocks MUST appear in the same order with identical content across all prompts. Any difference breaks the cache prefix.
+
+---
+
+#### Spawn All Reviewers (Cache-Optimized Prompts)
+
+**The SHARED_PREFIX below is identical for every reviewer. Build it ONCE, reuse for all:**
+
+```
+SHARED_PREFIX = `
+<story>
+[INLINE: Full story file content — identical for all reviewers]
+</story>
+
+<structural_digest>
+[INLINE: The structural digest built above — identical for all reviewers]
+</structural_digest>
+
+<metis_completion>
+[INLINE: Summary from metis.json — files_created, files_modified, tasks_addressed]
+</metis_completion>
+`
+```
+
+### Argus 👁️ (Inspector) - ALWAYS SPAWN — Full Context
 
 ```
 Task({
@@ -742,14 +875,20 @@ Task({
   model: "opus",
   description: "👁️ Argus inspecting {{story_key}}",
   prompt: `
+${SHARED_PREFIX}
+
+<files_for_review>
+[INLINE: ALL implementation file contents — Argus needs everything]
+</files_for_review>
+
 You are ARGUS 👁️ - The 100-Eyed Giant.
 
 You see EVERYTHING. Nothing escapes your gaze.
 
 <objective>
 Independently verify implementation WITH CODE CITATIONS:
-1. Read story file - understand ALL tasks
-2. Read each file Metis created/modified
+1. Review the story and structural digest above
+2. Review ALL files provided in <files_for_review>
 3. **Map EACH task to specific code with file:line citations**
 4. Run verification checks (type-check, lint, tests, build)
 </objective>
@@ -771,7 +910,7 @@ Save to: docs/sprint-artifacts/completions/{{story_key}}-argus.json
 })
 ```
 
-### Nemesis 🧪 (Test Quality) - Skip for trivial/micro
+### Nemesis 🧪 (Test Quality) - Skip for trivial/micro — Focused Context (test files)
 
 ```
 Task({
@@ -779,9 +918,17 @@ Task({
   model: "opus",
   description: "🧪 Nemesis reviewing tests for {{story_key}}",
   prompt: `
+${SHARED_PREFIX}
+
+<files_for_review>
+[INLINE: NEMESIS_FILES — test files only. Production signatures are in the structural digest above.]
+</files_for_review>
+
 You are NEMESIS 🧪 - Goddess of Retribution and Balance.
 
 You find what's missing. You expose what's weak.
+
+The structural digest above contains production file signatures so you can assess coverage without reading every production file. If you need to inspect a specific production file's implementation details, use the Read tool — this is your escape hatch.
 
 <objective>
 Review test files for quality:
@@ -801,7 +948,7 @@ Save to: docs/sprint-artifacts/completions/{{story_key}}-nemesis.json
 })
 ```
 
-### Cerberus 🔐 (Security) - standard+
+### Cerberus 🔐 (Security) - standard+ — Focused Context (security-relevant files)
 
 ```
 Task({
@@ -809,11 +956,19 @@ Task({
   model: "opus",
   description: "🔐 Cerberus guarding {{story_key}}",
   prompt: `
+${SHARED_PREFIX}
+
+<files_for_review>
+[INLINE: CERBERUS_FILES — route, auth, database, security, config files]
+</files_for_review>
+
 You are CERBERUS 🔐 - The Three-Headed Guardian.
 
 Nothing unsafe passes your gates.
 
-Focus: Security vulnerabilities, injection attacks, auth issues.
+The structural digest above shows ALL files and their exports. You have been given the security-relevant files inline. If you need to inspect additional files (e.g., a utility referenced from an auth file), use the Read tool — this is your escape hatch.
+
+Focus: Security vulnerabilities, injection attacks, auth issues, data exposure.
 
 <issue_classification>
 Classify each issue: MUST_FIX / SHOULD_FIX / STYLE
@@ -825,7 +980,7 @@ Save to: docs/sprint-artifacts/completions/{{story_key}}-cerberus.json
 })
 ```
 
-### Apollo ⚡ (Logic/Performance) - complex+
+### Apollo ⚡ (Logic/Performance) - complex+ — Focused Context (logic files)
 
 ```
 Task({
@@ -833,9 +988,17 @@ Task({
   model: "opus",
   description: "⚡ Apollo analyzing {{story_key}}",
   prompt: `
+${SHARED_PREFIX}
+
+<files_for_review>
+[INLINE: APOLLO_FILES — logic, route, database, types files]
+</files_for_review>
+
 You are APOLLO ⚡ - God of Reason, Truth, and Light.
 
 You illuminate logic flaws and performance issues.
+
+The structural digest above shows ALL files and their exports. You have been given the logic-relevant files inline. If you need to inspect additional files (e.g., a UI component that calls a service), use the Read tool — this is your escape hatch.
 
 Focus: Logic bugs, edge cases, performance bottlenecks, algorithmic issues.
 
@@ -848,7 +1011,7 @@ Save to: docs/sprint-artifacts/completions/{{story_key}}-apollo.json
 })
 ```
 
-### Hestia 🏛️ (Architecture) - micro+
+### Hestia 🏛️ (Architecture) - micro+ — Full Context
 
 ```
 Task({
@@ -856,6 +1019,12 @@ Task({
   model: "opus",
   description: "🏛️ Hestia reviewing architecture of {{story_key}}",
   prompt: `
+${SHARED_PREFIX}
+
+<files_for_review>
+[INLINE: ALL implementation file contents — architecture is cross-cutting]
+</files_for_review>
+
 You are HESTIA 🏛️ - Goddess of Hearth, Home, and Structure.
 
 You ensure the foundation is solid.
@@ -871,7 +1040,7 @@ Save to: docs/sprint-artifacts/completions/{{story_key}}-hestia.json
 })
 ```
 
-### Arete ✨ (Code Quality) - critical only
+### Arete ✨ (Code Quality) - critical only — Focused Context (production files)
 
 ```
 Task({
@@ -879,9 +1048,17 @@ Task({
   model: "opus",
   description: "✨ Arete judging quality of {{story_key}}",
   prompt: `
+${SHARED_PREFIX}
+
+<files_for_review>
+[INLINE: ARETE_FILES — all production files, test files excluded]
+</files_for_review>
+
 You are ARETE ✨ - Personification of Excellence.
 
 You hold code to the highest standards.
+
+The structural digest above shows ALL files including tests. You have been given production files inline (tests excluded — Nemesis handles those). If you need to inspect a test file for context, use the Read tool — this is your escape hatch.
 
 Focus: Maintainability, readability, best practices, code cleanliness.
 
@@ -901,16 +1078,30 @@ Save to: docs/sprint-artifacts/completions/{{story_key}}-arete.json
 IF FORGED_SPECS.forged_specialists.length > 0:
   # Include these in the SAME message as Pantheon reviewers above
   FOR EACH spec IN FORGED_SPECS.forged_specialists:
+
+    # Determine file partition based on spec.review_focus keywords
+    SPEC_FILES = match_review_focus_to_classifications(spec.review_focus)
+    # If keywords span 3+ file categories or are unclear → ALL files
+    # Otherwise → only matching classified files
+
     Task({
       subagent_type: "{{spec.suggested_claude_agent_type}}",
       model: "opus",
       description: "{{spec.emoji}} {{spec.name}} reviewing {{story_key}}",
       prompt: `
+${SHARED_PREFIX}
+
+<files_for_review>
+[INLINE: SPEC_FILES — partitioned by review_focus, or ALL if ambiguous]
+</files_for_review>
+
 You are {{spec.name}} ({{spec.emoji}}) — {{spec.title}}.
 
 {{spec.domain_expertise}}
 
-Review the following code changes for this story. Focus specifically on:
+The structural digest above shows ALL files and their exports. You have been given files relevant to your domain inline. If you need to inspect additional files, use the Read tool — this is your escape hatch.
+
+Review the provided files for this story. Focus specifically on:
 {{spec.review_focus — as bullet list}}
 
 Technology Checklist — verify each item:
@@ -921,9 +1112,6 @@ Known Gotchas to watch for:
 
 Issue Classification:
 {{spec.issue_classification_guidance}}
-
-<story>[INLINE: story content]</story>
-<files_to_review>[list from metis.json]</files_to_review>
 
 Output your findings in standard reviewer JSON format.
 Save to: docs/sprint-artifacts/completions/{{story_key}}-{{spec.id}}.json
@@ -1588,9 +1776,9 @@ Update `docs/sprint-artifacts/completions/{{story_key}}-progress.json`:
 | complex | parallel | Argus + Nemesis + Cerberus + Apollo + Hestia | 11-15 tasks, auth, migrations |
 | critical | parallel | Argus + Nemesis + Cerberus + Apollo + Hestia + Arete | 16+ tasks, payment, encryption, PII |
 
-**Review Modes (Token Optimization v4.2):**
+**Review Modes (Token Optimization v7.1):**
 - **Consolidated** - Single Multi-Reviewer agent covers all 4 perspectives (Argus, Nemesis, Cerberus, Hestia). Saves ~60-70% tokens. Use for trivial→standard.
-- **Parallel** - Separate agents spawn in parallel for maximum independence. Use for complex/critical.
+- **Parallel** - Separate agents spawn in parallel for maximum independence. Pre-read + file partitioning + prompt cache reduces input tokens ~50%. Use for complex/critical.
 
 **Agent roles:**
 - **Argus** 👁️ (Inspector) - Verifies tasks with code citations.
@@ -1623,6 +1811,16 @@ Update `docs/sprint-artifacts/completions/{{story_key}}-progress.json`:
 </success_criteria>
 
 <version_history>
+**v7.1 - Context Optimization Edition**
+1. ✅ Phase 3 Option B: Orchestrator pre-reads ALL files once, builds structural digest (~200-400 lines)
+2. ✅ File classification engine: test, migration, config, route, auth, ui, database, types, security, logic
+3. ✅ File partitioning by reviewer concern: Argus/Hestia get ALL files; Nemesis/Cerberus/Apollo/Arete get focused subsets + digest
+4. ✅ Cache-optimized prompt structure: identical prefix (story + digest) cached after agent #1
+5. ✅ Escape hatch: focused agents can Read additional files beyond their partition
+6. ✅ Forged specialists: review_focus keywords matched against file classifications
+7. ✅ Agent persona files updated with Context Delivery paragraph (backward-compatible)
+8. ✅ Option A (consolidated) unchanged — already efficient with single agent
+
 **v7.0 - Pygmalion Edition**
 1. ✅ Added Pygmalion (Persona Forge) — dynamically forges domain-specific specialist personas
 2. ✅ New Phase 1.5 FORGE: Domain analysis + specialist forging (complexity >= light)

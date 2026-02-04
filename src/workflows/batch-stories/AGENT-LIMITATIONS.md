@@ -6,22 +6,57 @@
 
 ## Core Limitations
 
-### ❌ Agents CANNOT Invoke Other Workflows
+### ❌ Agents CANNOT Invoke Slash Commands
 
 **What this means:**
 - Agents cannot run `/create-story-with-gap-analysis`
-- Agents cannot execute `/` slash commands (those are for user CLI)
-- Agents cannot call other BMAD workflows mid-execution
+- Agents cannot execute `/` slash commands (the Skill tool is not available to Task agents)
+- Agents cannot trigger BMAD workflows that require the Skill tool
 
 **Why:**
-- Slash commands require user terminal context
-- Workflow invocation requires special tool access
-- Batch agents are isolated execution contexts
+- Slash commands use the Skill tool, which is only available in the main CLI session
+- Task agents (including `general-purpose`) do NOT have the Skill tool
+- This is a Claude Code platform limitation, not a BMAD limitation
 
 **Implication:**
 - Story creation MUST happen before batch execution
 - If stories are incomplete, batch will skip them
-- No way to "fix" stories during batch
+- No way to "fix" stories during batch by invoking creation workflows
+
+---
+
+### ✅ Agents CAN and SHOULD Spawn Task Sub-Agents
+
+**What this means:**
+- `general-purpose` Task agents have access to ALL tools, including the Task tool itself
+- Heracles workers CAN and MUST spawn sub-agents for pipeline phases (BUILD, VERIFY, etc.)
+- Sub-agents can be spawned with specific `subagent_type` values (e.g., `dev-frontend`, `dev-typescript`)
+- Sub-agents can be run in parallel (multiple Task calls in one message) or in background
+
+**Why this matters for story-pipeline:**
+- The 7-phase pipeline requires spawning specialized agents (builders, reviewers, arbiter)
+- Without sub-agent spawning, workers can only self-implement and self-certify (no independent verification)
+- The entire quality model depends on separation of concerns: builder writes, reviewers verify independently
+
+**Available sub-agent types for pipeline phases:**
+- `general-purpose` — Metis (builder), Pygmalion (forge), Mnemosyne (reflect)
+- `dev-frontend` — Apollo (frontend builder)
+- `dev-typescript` — Hephaestus (backend builder)
+- `database-administrator` — Athena (database builder)
+- `engineer-deployment` — Atlas (infrastructure builder)
+- `auditor-security` — Cerberus (security reviewer)
+- `architect-reviewer` — Hestia (architecture reviewer)
+- `automater-test` — Nemesis (test quality reviewer)
+
+**Example — spawning a builder from within a Heracles worker:**
+```
+Task({
+  subagent_type: "general-purpose",
+  model: "opus",
+  prompt: "{{builder persona + story content + project context}}",
+  description: "BUILD phase for story 6-3"
+})
+```
 
 ---
 

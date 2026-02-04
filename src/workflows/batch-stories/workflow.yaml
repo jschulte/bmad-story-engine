@@ -119,7 +119,7 @@ swarm_config:
   enabled: true                 # Use TeammateTool swarm for parallel mode
   team_prefix: "batch"          # Team name: batch-{epic} or batch-{timestamp}
   max_workers: 3                # Number of Heracles worker teammates to spawn
-  worker_model: "sonnet"        # Model for Heracles worker agents
+  worker_model: "opus"           # Model for Heracles worker agents (must be opus to orchestrate 7-phase pipeline with sub-agent spawning)
   worker_persona: "{installed_path}/agents/heracles.md"
 
   # Swarm requires these Claude Code features (enabled by swarm patch):
