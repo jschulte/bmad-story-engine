@@ -149,7 +149,8 @@ token_efficiency:
   - Phase 3 agents spawn in parallel (same cost, faster)
   - Phase 3 Option B: orchestrator pre-reads files once, builds structural digest, partitions files by reviewer concern (~50% input token reduction)
   - Phase 3 Option B: all prompts share identical prefix (story + digest) for API prompt cache hits
-  - Phase 5 resumes Metis (50-70% token savings vs fresh agent)
+  - Phase 5 iteration 1: resumes Metis + reviewers (50-70% token savings vs fresh agent)
+  - Phase 5 iteration 2+: fresh spawn with compact context (avoids "transcript too large" errors)
   - Phase 5 resumes ONLY reviewers who had MUST_FIX issues (targeted verification)
   - Fresh eyes added only on iteration 2+ (avoids redundant full re-review)
 
@@ -1329,6 +1330,29 @@ Metis fixes + iterate until clean (max 3)
 
 **Skip if Themis cleared all issues.**
 
+### Context Management Strategy (v7.1)
+
+**Problem:** Agent transcripts accumulate across phases. By iteration 2, Metis may have 100K+ tokens from:
+- Phase 2 BUILD: story + playbooks + all files read + test output + implementation work
+- Phase 5 iteration 1: MUST_FIX list + fixes + verification
+
+**Solution:** Switch from **resume** to **fresh spawn with compact context** after iteration 1.
+
+| Iteration | Approach | Rationale |
+|-----------|----------|-----------|
+| 1 | Resume Metis + Resume reviewers | Transcripts still under ~100K tokens |
+| 2+ | Fresh Metis + Fresh reviewers with compact prompts | Avoid "transcript too large" errors |
+
+**Compact context includes ONLY:**
+- Story summary (not full story file)
+- MUST_FIX issues (file:line, description, recommended fix)
+- Files that need changes (not all implementation files)
+- Previous iteration summary (what was attempted, what failed)
+
+**Token budget:** Compact context should be <20K tokens vs ~80K+ for full context.
+
+---
+
 ### Iterative Refinement Loop
 
 ```
@@ -1355,15 +1379,18 @@ Metis fixes + iterate until clean (max 3)
 
 **WHILE MUST_FIX_COUNT > 0 AND ITERATION <= 3:**
 
-### 5.1 Resume Metis with MUST_FIX issues
+### 5.1 Fix MUST_FIX issues (Context-Aware)
+
+**Iteration 1: Resume Metis (transcript still manageable)**
 
 ```
-Task({
-  subagent_type: "general-purpose",
-  model: "opus",
-  description: "🔨 Metis fixing issues (iteration {{ITERATION}}) on {{story_key}}",
-  resume: "{{BUILDER_AGENT_ID}}",
-  prompt: `
+IF ITERATION == 1:
+  Task({
+    subagent_type: "general-purpose",
+    model: "opus",
+    description: "🔨 Metis fixing issues (iteration 1) on {{story_key}}",
+    resume: "{{BUILDER_AGENT_ID}}",
+    prompt: `
 Metis, Themis has upheld these issues as MUST_FIX:
 
 <must_fix_issues>
@@ -1372,28 +1399,134 @@ Metis, Themis has upheld these issues as MUST_FIX:
 
 Fix them. Run tests after each fix.
 `
-})
+  })
 ```
 
-### 5.2 Resume original reviewers to verify
-
-Only resume reviewers who had upheld MUST_FIX findings.
+**Iteration 2+: Spawn fresh Metis with compact context (avoid transcript overflow)**
 
 ```
-FOR EACH reviewer_id IN reviewers_with_upheld_must_fix:
+ELSE:  # ITERATION >= 2
+  # Build compact context to avoid "transcript too large" errors
+  COMPACT_CONTEXT = {
+    story_title: extract from story file
+    story_key: {{story_key}}
+    files_to_fix: unique files from must_fix issues
+    must_fix_count: {{MUST_FIX_COUNT}}
+    previous_iteration: summary of what was attempted
+  }
+
   Task({
-    resume: "{{reviewer_id}}",
+    subagent_type: "general-purpose",
+    model: "sonnet",  # Faster model sufficient for targeted fixes
+    description: "🔨 Metis fixing (iteration {{ITERATION}}) - fresh context",
     prompt: `
+You are Metis, the Builder. You are fixing issues from iteration {{ITERATION}}.
+
+<story_context>
+Story: {{story_key}} - {{story_title}}
+Previous iteration attempted fixes but {{MUST_FIX_COUNT}} issues remain.
+</story_context>
+
+<must_fix_issues>
+{{Compact list with file:line, issue description, recommended fix}}
+
+Example format:
+1. [MUST_FIX] Missing null check causes crash
+   File: src/api/route.ts:45
+   Issue: rental.space.name accessed without null check
+   Fix: Add optional chaining: rental?.space?.name
+
+2. [MUST_FIX] Test assertion too weak
+   File: src/api/route.test.ts:23
+   Issue: expect(result).toBeTruthy() doesn't validate structure
+   Fix: expect(result).toMatchObject({ id: expect.any(String), ... })
+
+...
+</must_fix_issues>
+
+<files_affected>
+{{List only the files that need fixing — don't re-read everything}}
+</files_affected>
+
+**Instructions:**
+1. Read ONLY the files listed in <files_affected>
+2. Fix each issue following the recommended approach
+3. Run tests after fixing: npm test
+4. Report which issues were fixed and test results
+
+**Critical:** Focus only on these specific issues. Don't refactor or improve unrelated code.
+`
+  })
+```
+
+### 5.2 Verify fixes (Context-Aware)
+
+Only verify from reviewers who had upheld MUST_FIX findings.
+
+**Iteration 1: Resume reviewers (transcript still manageable)**
+
+```
+IF ITERATION == 1:
+  FOR EACH reviewer_id IN reviewers_with_upheld_must_fix:
+    Task({
+      resume: "{{reviewer_id}}",
+      prompt: `
 Metis has addressed your issues. Verify:
 1. Is the fix satisfactory? (RESOLVED / NOT_RESOLVED)
 2. Did the fix introduce NEW issues?
 `
-  })
+    })
+```
+
+**Iteration 2+: Spawn fresh reviewers with compact context**
+
+```
+ELSE:  # ITERATION >= 2
+  FOR EACH reviewer IN reviewers_with_upheld_must_fix:
+    # Build compact verification context
+    REVIEWER_ISSUES = must_fix issues raised by this reviewer
+    FILES_CHANGED = files modified in this iteration
+
+    Task({
+      subagent_type: "{{reviewer.original_subagent_type}}",
+      model: "sonnet",
+      description: "{{reviewer.emoji}} {{reviewer.name}} verifying fixes (iter {{ITERATION}})",
+      prompt: `
+You are {{reviewer.name}} ({{reviewer.emoji}}) — {{reviewer.role}}.
+
+You previously raised these MUST_FIX issues in iteration {{ITERATION-1}}:
+
+<your_issues>
+{{List of issues this reviewer raised, with file:line}}
+
+Example:
+1. Missing null check in rental handler
+   File: src/api/route.ts:45
+   Expected: Optional chaining on rental?.space?.name
+</your_issues>
+
+<files_changed_this_iteration>
+{{Only the files that Metis just modified}}
+</files_changed_this_iteration>
+
+**Instructions:**
+1. Read ONLY the files in <files_changed_this_iteration>
+2. For EACH of your issues, verify:
+   - RESOLVED: Fix is correct and complete
+   - NOT_RESOLVED: Issue still exists or fix is inadequate
+   - NEW_ISSUE: Fix introduced a new problem
+3. Output verification results in your standard artifact format
+
+Save to: docs/sprint-artifacts/completions/{{story_key}}-{{reviewer.id}}-verify-iter{{ITERATION}}.json
+`
+    })
 ```
 
 ### 5.3 Fresh eyes on iteration 2+
 
 On iteration 2+, add ONE fresh reviewer (possibly Iris if frontend files).
+
+**Note on forged specialists:** Forged specialists with upheld MUST_FIX issues are included in the verification loop above (5.2). Since they were spawned fresh in Phase 3 (not resumed across phases), they're always re-spawned fresh in iteration 2+ using the same compact context approach as Pantheon reviewers.
 
 **END WHILE**
 
@@ -1772,8 +1905,9 @@ Update `docs/sprint-artifacts/completions/{{story_key}}-progress.json`:
 6. ✅ Added Pygmalion (Persona Forge) — dynamically forges domain-specific specialist personas
 7. ✅ New Phase 1.5 FORGE: Domain analysis + specialist forging (complexity >= light)
 8. ✅ Phase 3 VERIFY: Forged specialists spawn alongside Pantheon reviewers in parallel
-9. ✅ Agent persona files updated with Context Delivery paragraph (backward-compatible)
-10. ✅ Option A (consolidated) unchanged — already efficient with single agent
+9. ✅ Phase 5 context management: iteration 1 resumes, iteration 2+ spawns fresh with compact context to avoid "transcript too large" errors
+10. ✅ Agent persona files updated with Context Delivery paragraph (backward-compatible)
+11. ✅ Option A (consolidated) unchanged — already efficient with single agent
 
 **v6.1 - Token Optimization Edition**
 1. ✅ Combined Mnemosyne + Hermes into Hermes (saves ~5-8K tokens/story)
